@@ -4,6 +4,6 @@ project:
 
 website:
   title: "Monitoramento Reservatório da Pedra"
-  navbar:
-    left:
-      - index.qmd
+#  navbar:
+ #   left:
+  #    - index.qmd
