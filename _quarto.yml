@@ -1,0 +1,9 @@
+project:
+  type: website
+  output-dir: docs  # Isso garante que o 'render' jogue tudo para a pasta docs
+
+website:
+  title: "Monitoramento Reservatório da Pedra"
+  navbar:
+    left:
+      - index.qmd

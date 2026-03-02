@@ -1,0 +1,34 @@
+---
+title: "Monitoramento: Reservatório de Pedra"
+author: "Paulo"
+format: 
+  dashboard:
+    orientation: columns
+    theme: cosmo
+---
+
+```{r}
+#| label: setup
+#| message: false
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+
+# Lendo os dados que o seu scraper vai gerar
+df <- read_csv("data/pedra_hoje.csv") %>%
+  mutate(Data = as.Date(Data, format = "%d/%m")) # Ajuste conforme o padrão da Chesf
+
+
+
+
+Gráfico de Volume Útil
+Snippet de código
+#| title: "Evolução do Volume Útil (%)"
+p1 <- ggplot(df, aes(x = Data, y = `Volume Útil(%)`)) +
+  geom_line(color = "#2c3e50", size = 1) +
+  geom_point(color = "#e74c3c") +
+  theme_minimal() +
+  labs(x = "Data", y = "Volume (%)")
+
+ggplotly(p1)
