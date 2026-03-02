@@ -27,7 +27,7 @@ jobs:
 
       - name: Instalar Dependências do R
         run: |
-          install.packages(c("rvest", "tidyverse", "plotly", "glue", "fontawesome"))
+          install.packages(c("rvest", "tidyverse", "plotly", "glue", "fontawesome","here","janitor"))
         shell: Rscript {0}
 
       - name: Rodar Scraping e Renderizar Dashboard
