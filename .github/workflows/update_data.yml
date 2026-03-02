@@ -25,7 +25,7 @@ jobs:
 
       - name: Rodar Scraping e Renderizar Dashboard
         run: |
-          Rscript scripts/chesf_data.R # Atualiza o data/pedra_hoje.csv
+          Rscript chesf_data.R # Atualiza o data/pedra_hoje.csv
           quarto render index.qmd       # Gera o novo index.html na pasta docs/
 
       - name: Commit e Push dos arquivos atualizados
