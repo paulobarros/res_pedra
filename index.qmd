@@ -188,10 +188,9 @@ tooltip = c("y","x")) |>
 
 :::
 
-:::{.card title="Desenvolvido por:"}
+:::{.card title="Desenvolvido por:" }
 
-
-:::{.author-data}
+![](images/AvatarPB-Yellow.png){width=250px fig-align="center"}
 
 <h2>Paulo Barros</h2>
 
@@ -201,7 +200,7 @@ Mestre em Genética, Biodiversidade e Conservação
 
 [<span style="color:#333333;">{{< fa brands instagram size=2xl >}}</span> **\@pbarros.bio**](https://instagram.com/pbarros.bio){target="_blank"}
 
-:::
+
 
 :::
 

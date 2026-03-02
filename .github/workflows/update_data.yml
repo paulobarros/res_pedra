@@ -20,8 +20,10 @@ jobs:
       - name: Instalar Chromium e dependências de sistema
         run: sudo apt-get install -y chromium-browser
 
-      - name: Instalar Pacotes R
-        run: Rscript -e "install.packages(c('rvest', 'dplyr'))"
+      - name: Instalar Dependências do R
+        run: |
+          install.packages(c("rvest", "tidyverse", "plotly", "glue", "fontawesome"))
+        shell: Rscript {0}
 
       - name: Rodar Scraping e Renderizar Dashboard
         run: |
