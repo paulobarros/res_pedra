@@ -115,7 +115,7 @@ p1 <- ggplot(df, aes(x = data, y = volume)) +
   geom_point(color = "#e74c3c") +
   # Formatação para o padrão brasileiro (dmy) nos labels do eixo X
   scale_x_date(date_labels = "%d/%m", date_breaks = "1 day") +
-  scale_y_continuous(breaks = seq(27.5,40,2.5),limits = c(27.5, 40)) + 
+  scale_y_continuous(breaks = seq(27.5,ceiling(max(df$volume)/100)*100,2.5),limits = c(27.5, 40)) + 
   theme_minimal() +
   labs(x = "Dia/Mês", y = "Volume (%)") +
   theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
@@ -147,7 +147,7 @@ p2 <- df |>
   geom_line(aes(y = defluencia, color = "Saída"), linewidth = 1) +
   scale_x_date(date_labels = "%d/%m", date_breaks = "1 day") +
   scale_color_manual(values = c("Entrada" = "#3498db", "Saída" = "#f1c40f")) +
-  scale_y_continuous(breaks = seq(0,300,25)) +
+  scale_y_continuous(breaks = seq(0,ceiling(max(df$afluencia)/100)*100,25)) +
   theme_minimal() +
   labs(x = "Dia/Mês", y = "Vazão (m³/s)", color = "Fluxo") +
   theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
