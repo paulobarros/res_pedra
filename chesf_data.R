@@ -1,7 +1,9 @@
 library(rvest)
+library(dplyr)
+library(tidyr)
 library(here)
-library(tidyverse)
-library(janitor)
+library(lubridate)
+
 
 url_chesf <- "https://www.chesf.com.br/SistemaChesf/Pages/GestaoRecursosHidricos/GestaoRecursosHidricos.aspx"
 
@@ -35,7 +37,7 @@ colnames(data_table) <- c("data", "cota","afluencia","defluencia","volume")
 
 # 4. Limpeza Básica (Remover linhas vazias que o ASPX costuma gerar)
 df_final <- data_table |>
-  mutate(data = glue::glue("{data}/2026") |>
+  mutate(data = paste0(data,"/2026") |>
   dmy()) |>
   mutate(across(cota:volume, ~as.numeric(.))) |> # Mantém como texto para evitar erros de conversão iniciais 
   drop_na()
