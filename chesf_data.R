@@ -40,4 +40,4 @@ df_final <- data_table |>
   mutate(across(cota:volume, ~as.numeric(.))) |> # Mantém como texto para evitar erros de conversão iniciais 
   drop_na()
 
-write.csv(df_final,here("data","pedra_dados.csv"))
+write.csv(df_final,here("data","pedra_dados.csv"), row.names = F)

@@ -23,22 +23,34 @@ jobs:
       - name: Instalar dependências do sistema Linux
         run: |
           sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libssl-dev
+          sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libssl-dev libfontconfig1-dev
 
-      - name: Instalar Dependências do R
-        run: |
-          install.packages(c("rvest", "tidyverse", "plotly", "glue", "fontawesome","here","janitor"))
-        shell: Rscript {0}
+      # - name: Instalar Dependências do R
+      #   run: |
+      #     install.packages(c("rvest", "dplyr", "plotly", "tidyr", "lubridate","here")
+      #   shell: Rscript {0}
+
+      - name: Instalar dependências com Cache
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          cache: true
+          packages: |
+            any::dplyr
+            any::rvest
+            any::plotly
+            any::here
+            any::tidyr
+            any::lubridate
 
       - name: Rodar Scraping e Renderizar Dashboard
         run: |
-          Rscript chesf_data.R # Atualiza o data/pedra_hoje.csv
+          Rscript chesf_data.R # Atualiza o data/pedra_dados.csv
           quarto render index.qmd       # Gera o novo index.html na pasta docs/
 
       - name: Commit e Push dos arquivos atualizados
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-          git add data/pedra_hoje.csv docs/
+          git add data/pedra_dados.csv docs/
           git commit -m "Auto-update Dashboard: $(date)" || exit 0
           git push
