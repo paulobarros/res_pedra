@@ -41,6 +41,8 @@ jobs:
             any::here
             any::tidyr
             any::lubridate
+            any::ggplot2
+            
 
       - name: Rodar Scraping e Renderizar Dashboard
         run: |

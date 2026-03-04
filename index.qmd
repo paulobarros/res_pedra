@@ -22,21 +22,25 @@ format:
 ```{r}
 #| label: setup
 #| message: false
-library(tidyverse)
+library(dplyr)
+library(tidyr)
 library(plotly)
-library(glue)
 library(scales) # Necessário para formatar as datas nos eixos
 library(htmltools)
-library(ggtext)
+library(ggplot2)
 
 
-df <- read_csv("data/pedra_dados.csv")
+
+df <- read.csv("data/pedra_dados.csv") |>
+  mutate(data = as.Date(data)
+
+  )
 
 
 
 last_record <- df |> slice(1)
 
-last_date  <- glue("Volume Total Reservatório em {format(last_record$data, '%d/%m/%Y')}")
+last_date  <- paste0("Volume Total Reservatório em ",format(as.Date(last_record$data), format ='%d/%m/%Y'))
 
 
 ```
@@ -56,7 +60,7 @@ last_date  <- glue("Volume Total Reservatório em {format(last_record$data, '%d/
 list(
   icon = "calendar-check-fill",
   color = "#ced4da",
-  value = format(last_record$data, '%d/%m/%Y')
+  value = format(as.Date(last_record$data), format = '%d/%m/%Y')
 )
 ```
 
