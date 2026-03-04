@@ -56,3 +56,10 @@ jobs:
           git add data/pedra_dados.csv docs/
           git commit -m "Auto-update Dashboard: $(date)" || exit 0
           git push
+
+      - name: Publish to GitHub Pages
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
