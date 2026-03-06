@@ -38,7 +38,10 @@ df <- read.csv("data/pedra_dados.csv") |>
 
 
 
-last_record <- df |> slice(1)
+last_record <- df |> 
+  filter(rowSums(!is.na(across(everything())))==4) |>
+  slice(1) |>
+  mutate(across(afluencia:volume, ~ if_else(is.na(.x),"Sem Dados", as.character(.x))))
 
 last_date  <- paste0("Volume Total Reservatório em ",format(as.Date(last_record$data), format ='%d/%m/%Y'))
 
@@ -75,7 +78,7 @@ list(
 list(
   icon = "moisture",
   color = ifelse(last_record$volume < 20, "danger", "primary"),
-  value = paste0(last_record$volume, "%")
+  value = paste0(last_record$volume, if_else(last_record$volume == "Sem Dados", "", "%"))
 )
 ```
 
@@ -89,7 +92,7 @@ list(
 list(
   icon = "water",
   color = ifelse(last_record$afluencia >= 100, "#ffcb69", "#a9d6e5"),
-  value = paste0(last_record$afluencia, "m³/s")
+  value = paste0(last_record$afluencia, if_else(last_record$afluencia == "Sem Dados", ""," m³/s"))
 )
 ```
 
@@ -103,7 +106,7 @@ list(
 list(
   icon = "box-arrow-right",
   color = ifelse(last_record$defluencia < 10, "#95d5b2", "#f18701"),
-  value = paste0(last_record$defluencia, "m³/s")
+  value = paste0(last_record$defluencia, if_else(last_record$defluencia == "Sem Dados", "", " m³/s"))
 )
 ```
 
@@ -114,12 +117,16 @@ list(
 
 ```{r}
 #| title: "Evolução do Volume Útil (%)"
-p1 <- ggplot(df, aes(x = data, y = volume)) +
+
+df_vol <- df |> 
+  filter(!is.na(volume))
+
+p1 <- ggplot(data = df_vol, aes(x = data, y = volume)) +
   geom_line(color = "#2c3e50", linewidth = 1) +
   geom_point(color = "#e74c3c") +
   # Formatação para o padrão brasileiro (dmy) nos labels do eixo X
   scale_x_date(date_labels = "%d/%m", date_breaks = "1 day") +
-  scale_y_continuous(breaks = seq(27.5,max(df$volume)+2.5,2.5),limits = c(27.5, max(df$volume)+2.5)) + 
+  scale_y_continuous(breaks = seq(27.5,max(df_vol$volume)+2.5,2.5),limits = c(27.5, max(df_vol$volume)+2.5)) + 
   theme_minimal() +
   labs(x = "Dia/Mês", y = "Volume (%)") +
   theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
@@ -136,7 +143,12 @@ ggplotly(p1) |>
         title = list(font = list(size = 18))
         )
     )
+
+
+
 ```
+
+
 
 
 
@@ -144,6 +156,9 @@ ggplotly(p1) |>
 
 ```{r}
 #| title: "Afluência vs Defluência (m³/s) - Últimos 10 dias"
+
+df_p2 <- df |>
+  filter((!is.na(afluencia)))
 p2 <- df |>
   head(10) |>
   ggplot(aes(x = data)) +
@@ -151,7 +166,7 @@ p2 <- df |>
   geom_line(aes(y = defluencia, color = "Saída"), linewidth = 1) +
   scale_x_date(date_labels = "%d/%m", date_breaks = "1 day") +
   scale_color_manual(values = c("Entrada" = "#3498db", "Saída" = "#f1c40f")) +
-  scale_y_continuous(breaks = seq(0,ceiling(max(df$afluencia)/100)*100,25)) +
+  scale_y_continuous(breaks = seq(0,ceiling(max(df_p2$afluencia)/100)*100,25)) +
   theme_minimal() +
   labs(x = "Dia/Mês", y = "Vazão (m³/s)", color = "Fluxo") +
   theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
