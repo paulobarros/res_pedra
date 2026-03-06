@@ -39,7 +39,6 @@ colnames(data_table) <- c("data", "cota","afluencia","defluencia","volume")
 df_final <- data_table |>
   mutate(data = paste0(data,"/2026") |>
   dmy()) |>
-  mutate(across(cota:volume, ~as.numeric(.))) |> # Mantém como texto para evitar erros de conversão iniciais 
-  drop_na()
+  mutate(across(cota:volume, ~as.numeric(.)))
 
 write.csv(df_final,here("data","pedra_dados.csv"), row.names = F)
