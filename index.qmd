@@ -39,7 +39,7 @@ df <- read.csv("data/pedra_dados.csv") |>
 
 
 last_record <- df |> 
-  filter(rowSums(!is.na(across(everything())))==4) |>
+  filter(!rowSums(is.na(across(everything())))==4) |>
   slice(1) |>
   mutate(across(afluencia:volume, ~ if_else(is.na(.x),"Sem Dados", as.character(.x))))
 
