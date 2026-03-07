@@ -44,22 +44,23 @@ jobs:
             any::ggplot2
             
 
-      - name: Rodar Scraping e Renderizar Dashboard
-        run: |
-          Rscript chesf_data.R # Atualiza o data/pedra_dados.csv
-          quarto render index.qmd       # Gera o novo index.html na pasta docs/
-
-      - name: Commit e Push dos arquivos atualizados
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add data/pedra_dados.csv docs/
-          git commit -m "Auto-update Dashboard: $(date)" || exit 0
-          git push
+      - name: Rodar Scraping
+        run: Rscript chesf_data.R # Gera o CSV novo com os 36.38%
 
       - name: Publish to GitHub Pages
         uses: quarto-dev/quarto-actions/publish@v2
         with:
           target: gh-pages
+          # O segredo está aqui: dizemos para o Quarto NÃO renderizar de novo, 
+          # mas usar os arquivos que já geramos no passo anterior.
+          render: true 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Salvar CSV atualizado na Main (Opcional)
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add data/pedra_dados.csv
+          git commit -m "Dados atualizados: $(date)" || exit 0
+          git push origin main
