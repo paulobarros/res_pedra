@@ -9,9 +9,10 @@ format:
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
-          /* Força a fonte em todo o dashboard e componentes plotly */
-          body, .js-plotly-plot .plot-container .svg-container text {
+          /* Força a fonte Barlow Condensed nos componentes plotly (eixos/ticks) */
+          .js-plotly-plot .plot-container .svg-container text {
             font-family: 'Barlow Condensed', sans-serif !important;
           }
         </style>
@@ -28,6 +29,7 @@ library(plotly)
 library(scales) # Necessário para formatar as datas nos eixos
 library(htmltools)
 library(ggplot2)
+library(lubridate)
 
 
 
@@ -45,6 +47,19 @@ last_record <- df |>
 
 last_date  <- paste0("Volume Total Reservatório em ",format(as.Date(last_record$data), format ='%d/%m/%Y'))
 
+estilo_plotly <- function(p) {
+  p |> layout(
+    font = list(family = "Roboto, sans-serif"),
+    xaxis = list(
+      tickfont = list(family = "Barlow Condensed, sans-serif", size = 18),
+      title = list(font = list(size = 18))
+    ),
+    yaxis = list(
+      tickfont = list(family = "Barlow Condensed, sans-serif", size = 18),
+      title = list(font = list(size = 18))
+    )
+  )
+}
 
 ```
 
@@ -113,39 +128,54 @@ list(
 
 ## Row {height="70%"}
 
-### Column {width=50%}
+### Column {width=50% .tabset}
 
 ```{r}
-#| title: "Evolução do Volume Útil (%)"
+#| title: "Média Móvel (5 dias)"
 
-df_vol <- df |> 
-  filter(!is.na(volume))
+df_vol <- df |>
+  filter(!is.na(volume)) |>
+  arrange(data) |>
+  mutate(volume_ma5 = as.numeric(stats::filter(volume, rep(1 / 5, 5), sides = 1)))
 
-p1 <- ggplot(data = df_vol, aes(x = data, y = volume)) +
+p_ma5 <- ggplot(df_vol, aes(x = data, y = volume_ma5)) +
+  geom_line(color = "#0353a4", linewidth = 1.2) +
+  scale_x_date(date_labels = "%d/%m", date_breaks = "1 week") +
+  theme_minimal() +
+  labs(x = "Dia/Mês", y = "Volume (%) - Média 5 dias") +
+  theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
+
+ggplotly(p_ma5) |> estilo_plotly()
+```
+
+```{r}
+#| title: "Série Completa"
+
+p_full <- ggplot(df_vol, aes(x = data, y = volume)) +
   geom_line(color = "#2c3e50", linewidth = 1) +
-  geom_point(color = "#e74c3c") +
-  # Formatação para o padrão brasileiro (dmy) nos labels do eixo X
-  scale_x_date(date_labels = "%d/%m", date_breaks = "1 day") +
-  scale_y_continuous(breaks = seq(27.5,max(df_vol$volume)+2.5,2.5),limits = c(27.5, max(df_vol$volume)+2.5)) + 
+  scale_x_date(date_labels = "%d/%m", date_breaks = "1 week") +
   theme_minimal() +
   labs(x = "Dia/Mês", y = "Volume (%)") +
   theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
 
-ggplotly(p1) |>
-    layout(
-    font = list(family = "Roboto, sans-serif"),
-    xaxis = list(
-        tickfont = list(family = "Barlow Condensed, sans-serif", size = 18),
-        title = list(font = list(size = 18))
-        ),
-    yaxis = list(
-        tickfont = list(family = "Barlow Condensed, sans-serif", size = 18),
-        title = list(font = list(size = 18))
-        )
-    )
+ggplotly(p_full) |> estilo_plotly()
+```
 
+```{r}
+#| title: "Média Mensal"
 
+df_mensal <- df_vol |>
+  mutate(mes = floor_date(data, "month")) |>
+  summarise(volume_medio = mean(volume, na.rm = TRUE), .by = mes)
 
+p_mensal <- ggplot(df_mensal, aes(x = mes, y = volume_medio)) +
+  geom_col(fill = "#0353a4", width = 20) +
+  scale_x_date(date_labels = "%b/%Y") +
+  theme_minimal() +
+  labs(x = "Mês", y = "Volume Médio (%)") +
+  theme(axis.text.x = element_text(family = "Barlow Condensed Bold"))
+
+ggplotly(p_mensal) |> estilo_plotly()
 ```
 
 
@@ -175,21 +205,7 @@ p2 <- df_p2 |>
   theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
 
 
-ggplotly(p2,
-tooltip = c("y","x")) |>
-    layout(
-    font = list(family = "Roboto, sans-serif"),
-    xaxis = list(
-        tickfont = list(family = "Barlow Condensed, sans-serif", size = 18),
-        title = list(font = list(size = 18))
-        ),
-    yaxis = list(
-        tickfont = list(family = "Barlow Condensed, sans-serif", size = 18),
-        title = list(font = list(size = 18))
-        )
-    )
-
-  
+ggplotly(p2, tooltip = c("y","x")) |> estilo_plotly()
 ```
 
 # Sobre
