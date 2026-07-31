@@ -1,7 +1,7 @@
 name: Atualizar Dashboard da Pedra
 on:
   schedule:
-    - cron: '0 */4 * * *' # 6x ao dia
+    - cron: '0 9 * * *' # 1x ao dia, 06:00 horário da Bahia
   workflow_dispatch:
 
 jobs:
@@ -17,18 +17,10 @@ jobs:
       - name: Instalar Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
-      - name: Instalar Chromium e dependências de sistema
-        run: sudo apt-get install -y chromium-browser
-
       - name: Instalar dependências do sistema Linux
         run: |
           sudo apt-get update
           sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libssl-dev libfontconfig1-dev
-
-      # - name: Instalar Dependências do R
-      #   run: |
-      #     install.packages(c("rvest", "dplyr", "plotly", "tidyr", "lubridate","here")
-      #   shell: Rscript {0}
 
       - name: Instalar dependências com Cache
         uses: r-lib/actions/setup-r-dependencies@v2
@@ -36,16 +28,16 @@ jobs:
           cache: true
           packages: |
             any::dplyr
-            any::rvest
+            any::httr2
             any::plotly
             any::here
             any::tidyr
             any::lubridate
             any::ggplot2
-            
 
-      - name: Rodar Scraping
-        run: Rscript chesf_data.R # Gera o CSV novo com os 36.38%
+
+      - name: Consultar API da Chesf
+        run: Rscript chesf_data.R
 
       - name: Publish to GitHub Pages
         uses: quarto-dev/quarto-actions/publish@v2
