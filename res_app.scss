@@ -84,12 +84,16 @@ body {
 }
 
 .valuebox .value-box-showcase i.bi {
-  font-size: 1.9rem !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem !important;
+  height: 3.25rem !important;
+  font-size: 1.5rem !important;
+  line-height: 1 !important;
   background: rgba(255, 255, 255, 0.3);
   color: #fff !important;
-  border-radius: 999px;
-  padding: .6em;
-  aspect-ratio: 1 / 1;
+  border-radius: 50%;
 }
 
 .box-data .valuebox .value-box-showcase i.bi {

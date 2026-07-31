@@ -188,24 +188,21 @@ ggplotly(p_mensal) |> estilo_plotly()
 #| title: "Afluência vs Defluência (m³/s) - Últimos 10 dias"
 
 df_p2 <- df |>
-  filter((!is.na(afluencia))) |>
-  mutate(across(-data,~if_else(is.na(.x),0,.x)))
-p2 <- df_p2 |>
+  filter(!is.na(afluencia)) |>
+  mutate(across(-data, ~if_else(is.na(.x), 0, .x))) |>
   head(10) |>
-  ggplot(aes(x = data)) +
-  geom_line(aes(y = afluencia, color = "Entrada"), linewidth = 1) +
-  geom_point(aes(y = afluencia), shape = 21, color = "#1b4965", fill = "#5fa8d3", size = 3) +
-  geom_line(aes(y = defluencia, color = "Saída"), linewidth = 1) +
-  geom_point(aes(y = defluencia), shape = 21, color = "#f77f00", fill = "#003049", size = 3) +
+  pivot_longer(cols = c(afluencia, defluencia), names_to = "fluxo", values_to = "vazao") |>
+  mutate(fluxo = factor(if_else(fluxo == "afluencia", "Entrada", "Saída"), levels = c("Entrada", "Saída")))
+
+p2 <- ggplot(df_p2, aes(x = data, y = vazao, fill = fluxo)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
   scale_x_date(date_labels = "%d/%m", date_breaks = "1 day") +
-  scale_color_manual(values = c("Entrada" = "#3498db", "Saída" = "#f1c40f")) +
-  scale_y_continuous(breaks = seq(0,ceiling(max(df_p2$afluencia)/100)*100,100)) +
+  scale_fill_manual(values = c("Entrada" = "#0077b6", "Saída" = "#90e0ef")) +
   theme_minimal() +
-  labs(x = "Dia/Mês", y = "Vazão (m³/s)", color = "Fluxo") +
+  labs(x = "Dia/Mês", y = "Vazão (m³/s)", fill = "Fluxo") +
   theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
 
-
-ggplotly(p2, tooltip = c("y","x")) |> estilo_plotly()
+ggplotly(p2, tooltip = c("x", "y", "fill")) |> estilo_plotly()
 ```
 
 # Sobre
