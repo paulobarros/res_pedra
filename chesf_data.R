@@ -5,6 +5,11 @@ library(here)
 library(lubridate)
 
 data_base <- format(Sys.Date(), "%Y-%m-%d")
+# dataBase é ignorado pelo servidor (testado com datas passadas, futuras,
+# ausentes e até valores inválidos - todas retornam a mesma janela móvel de
+# ~31 dias terminando na data atual do servidor). Mantido apenas como
+# documentação da intenção original da API; não há endpoint público para
+# consultar dados históricos além dessa janela.
 url_api <- paste0("https://hidrows.chesf.com.br/api/acompanhamento/Consultar?dataBase=", data_base)
 
 message(paste0("Consultando API da Chesf para a data-base ", data_base, "..."))
