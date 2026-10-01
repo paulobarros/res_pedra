@@ -16,6 +16,8 @@ body {
 .quarto-dashboard #quarto-dashboard-header .navbar {
   background: linear-gradient(135deg, #0353a4 0%, #023e7d 100%) !important;
   box-shadow: 0 4px 18px rgba(2, 33, 68, 0.25);
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
 }
 
 .quarto-dashboard #quarto-dashboard-header .navbar .navbar-brand-container img.navbar-logo {
@@ -38,15 +40,22 @@ body {
 }
 
 .quarto-dashboard #quarto-dashboard-header .navbar .navbar-nav .nav-link {
-  border-radius: 999px;
-  padding: .35rem 1rem !important;
-  margin: 0 .15rem;
-  transition: background-color .15s ease;
+  border-radius: 6px;
+  padding: .25rem .75rem !important;
+  margin: 0 .2rem;
+  font-size: 0.95rem;
+  transition: background-color .15s ease, color .15s ease;
 }
 
-.quarto-dashboard #quarto-dashboard-header .navbar .navbar-nav .nav-link:hover,
+.quarto-dashboard #quarto-dashboard-header .navbar .navbar-nav .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
 .quarto-dashboard #quarto-dashboard-header .navbar .navbar-nav .nav-link.active {
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  font-weight: 600;
 }
 
 /* Cards + value boxes */
@@ -96,14 +105,77 @@ body {
   border-radius: 50%;
 }
 
+/* Card 1: Data */
+.box-data .valuebox .value-box-grid {
+  grid-template-columns: auto 1fr !important;
+  gap: 0.5rem !important;
+}
+
+.box-data .valuebox .value-box-area {
+  padding: 0.75rem 0.5rem 0.75rem 0 !important;
+}
+
+.box-data .valuebox .value-box-showcase {
+  padding-left: 0.5rem !important;
+}
+
 .box-data .valuebox .value-box-showcase i.bi {
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  font-size: 1.3rem !important;
   background: rgba(255, 255, 255, 0.65);
   color: #495057 !important;
 }
 
+.box-data .valuebox .value-box-value {
+  font-size: 1.70rem !important;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Card 2: Volume Útil */
+.box-volume .valuebox .value-box-grid {
+  grid-template-columns: auto 1fr !important;
+  gap: 0.5rem !important;
+}
+
+.box-volume .valuebox .value-box-area {
+  padding: 0.5rem 0.5rem 0.5rem 0 !important;
+}
+
+.box-volume .valuebox .value-box-showcase {
+  padding-left: 0.5rem !important;
+}
+
+.box-volume .valuebox .value-box-value {
+  font-size: 2.5rem !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+}
+
+/* Cards 3 e 4: Afluência e Defluência */
+.box-fluxo .valuebox .value-box-grid {
+  grid-template-columns: auto 1fr !important;
+  gap: 0.5rem !important;
+}
+
+.box-fluxo .valuebox .value-box-area {
+  padding: 0.5rem 0.5rem 0.5rem 0 !important;
+}
+
+.box-fluxo .valuebox .value-box-showcase {
+  padding-left: 0.5rem !important;
+}
+
+.box-fluxo .valuebox .value-box-value {
+  font-size: 3.5rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
 .valuebox .value-box-title {
-    font-size: .95rem;
-    font-weight: 500;
+    font-size: .8rem;
+    font-weight: 600;
     letter-spacing: .2px;
     opacity: .9;
     text-transform: uppercase;
@@ -111,7 +183,18 @@ body {
 }
 
 .valuebox .value-box-value {
+  font-size: 1.55rem;
   font-weight: 700;
+  line-height: 1.15;
+}
+
+.valuebox .value-box-subtext {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #495057;
+  margin-top: 0.25rem;
+  line-height: 1.25;
 }
 
 /* Tabset (pills) dentro dos cards de gráficos */
