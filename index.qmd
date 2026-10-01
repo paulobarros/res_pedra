@@ -1,5 +1,5 @@
 ---
-title: "Reservatório da Pedra (CHESF)"
+title: "Reservatório da Pedra (AXIA Nordeste)"
 subtitle: " | Estatísticas de Monitoramento"
 format: 
   dashboard:
@@ -69,22 +69,24 @@ estilo_plotly <- function(p) {
 
 ### Column {.box-data}
 
-
 ```{r}
-#| content: valuebox
-#| title: Ultima Data CHESF
-#| classes: data_chesf
+#| results: asis
+#| echo: false
 
-list(
-  icon = "calendar-check-fill",
-  color = "#ced4da",
-  value = format(as.Date(last_record$data), format = '%d/%m/%Y')
-)
+data_obs <- format(as.Date(last_record$data), format = '%d/%m/%Y')
+hora_atualizacao <- format(with_tz(Sys.time(), "America/Bahia"), "%d/%m/%Y - %H:%M")
+
+cat(sprintf('
+::: {.valuebox icon="calendar-check-fill" color="#ced4da" title="Última Data AXIA Nordeste"}
+%s
+
+<span class="value-box-subtext">Última Atualização: %s</span>
+:::
+', data_obs, hora_atualizacao))
 ```
 
 
-### Column 
-
+### Column {.box-volume}
 
 ```{r}
 #| content: valuebox
@@ -97,8 +99,7 @@ list(
 )
 ```
 
-### Column 
-
+### Column {.box-fluxo}
 
 ```{r}
 #| content: valuebox
@@ -107,21 +108,20 @@ list(
 list(
   icon = "water",
   color = ifelse(last_record$afluencia >= 100, "#ffcb69", "#a9d6e5"),
-  value = paste0(last_record$afluencia, if_else(last_record$afluencia == "Sem Dados", ""," m³/s"))
+  value = last_record$afluencia
 )
 ```
 
-
-### Column 
+### Column {.box-fluxo}
 
 ```{r}
 #| content: valuebox
-#| title: Vazão (m³/s)
+#| title: Defluência (m³/s)
 
 list(
   icon = "box-arrow-right",
   color = ifelse(last_record$defluencia < 10, "#95d5b2", "#f18701"),
-  value = paste0(last_record$defluencia, if_else(last_record$defluencia == "Sem Dados", "", " m³/s"))
+  value = last_record$defluencia
 )
 ```
 
@@ -166,26 +166,37 @@ ggplotly(p_full) |> estilo_plotly()
 
 df_mensal <- df_vol |>
   mutate(mes = floor_date(data, "month")) |>
-  summarise(volume_medio = mean(volume, na.rm = TRUE), .by = mes)
+  summarise(volume_medio = round(mean(volume, na.rm = TRUE), 1), .by = mes) |>
+  mutate(label_text = paste0(round(volume_medio, 1), "%"))
 
 p_mensal <- ggplot(df_mensal, aes(x = mes, y = volume_medio)) +
   geom_col(fill = "#0353a4", width = 20) +
-  scale_x_date(date_labels = "%b/%Y") +
+  geom_text(
+    aes(y = volume_medio / 2, label = label_text),
+    color = "#ffffff",
+    fontface = "bold",
+    size = 6.5
+  ) +
+  scale_x_date(date_labels = "%b/%Y", date_breaks = "1 month") +
   theme_minimal() +
   labs(x = "Mês", y = "Volume Médio (%)") +
   theme(axis.text.x = element_text(family = "Barlow Condensed Bold"))
 
-ggplotly(p_mensal) |> estilo_plotly()
+p_ply_mensal <- ggplotly(p_mensal, tooltip = c("x", "y"))
+if (length(p_ply_mensal$x$data) >= 2) {
+  p_ply_mensal$x$data[[2]]$hoverinfo <- "none"
+}
+p_ply_mensal |> estilo_plotly()
 ```
 
 
 
 
 
-### Column {width=50%}
+### Column {width=50% .tabset}
 
 ```{r}
-#| title: "Afluência vs Defluência (m³/s) - Últimos 10 dias"
+#| title: "Últimos 10 dias"
 
 df_p2 <- df |>
   filter(!is.na(afluencia)) |>
@@ -205,6 +216,23 @@ p2 <- ggplot(df_p2, aes(x = data, y = vazao, fill = fluxo)) +
 ggplotly(p2, tooltip = c("x", "y", "fill")) |> estilo_plotly()
 ```
 
+```{r}
+#| title: "Série Completa"
+
+df_def <- df |>
+  filter(!is.na(defluencia)) |>
+  arrange(data)
+
+p_def <- ggplot(df_def, aes(x = data, y = defluencia)) +
+  geom_line(color = "#f18701", linewidth = 1) +
+  scale_x_date(date_labels = "%d/%m", date_breaks = "1 week") +
+  theme_minimal() +
+  labs(x = "Dia/Mês", y = "Defluência (m³/s)") +
+  theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
+
+ggplotly(p_def) |> estilo_plotly()
+```
+
 # Sobre
 
 
@@ -217,7 +245,7 @@ ggplotly(p2, tooltip = c("x", "y", "fill")) |> estilo_plotly()
 
 **Afluência ($m^3/s$):** É a vazão de entrada. Representa toda a água que está chegando ao reservatório, vinda das chuvas na cabeceira e dos rios que deságuam nele.
 
-**Defluência ($m^3/s$):** É a vazão de saída. É a quantidade de água que a Chesf está liberando pelas turbinas ou vertedouros para o leito do rio abaixo da barragem.
+**Defluência ($m^3/s$):** É a vazão de saída. É a quantidade de água que a concessionária (AXIA Nordeste, antiga CHESF) está liberando pelas turbinas ou vertedouros para o leito do rio abaixo da barragem.
 
 **Volume Útil (%):** É o indicador mais importante. Representa a porcentagem de água disponível acima do "Volume Morto" (nível mínimo para operação). É o que define se estamos em situação de seca ou de controle de cheia.
 
@@ -233,7 +261,7 @@ Biólogo e Cientista de Dados
 
 Mestre em Genética, Biodiversidade e Conservação
 
-[<span style="color:#333333;">{{< fa brands instagram size=2xl >}}</span> **\@pbarros.bio**](https://instagram.com/pbarros.bio){target="_blank"}
+[<span style="color:#333333;">{{< fa brands instagram size=2xl >}}</span> **\@pbarros.dados**](https://instagram.com/pbarros.dados){target="_blank"}
 
 
 
@@ -245,7 +273,7 @@ Mestre em Genética, Biodiversidade e Conservação
 
 :::{.card title="Fonte de Dados:"}
 
-Dados provenientes do [sistema de monitoramento da CHESF](https://www.chesf.com.br/SistemaChesf/Pages/GestaoRecursosHidricos/GestaoRecursosHidricos.aspx){target="_blank"}
+Dados provenientes do [sistema de gestão de recursos hídricos da AXIA Nordeste](https://axia.com.br/axia-nordeste-gestao-de-recursos-hidricos){target="_blank"} (antiga CHESF desde 2025).
 
 :::
 
