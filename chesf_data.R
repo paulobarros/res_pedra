@@ -79,3 +79,53 @@ df_final <- bind_rows(df_novo, df_antigo) |>
 write.csv(df_final, caminho_csv, row.names = FALSE)
 
 message(paste0("OK: ", nrow(df_novo), " leituras novas consultadas, ", nrow(df_final), " leituras no histórico total"))
+
+# ---------------------------------------------------------------------------
+# Log de leituras com data e hora da consulta
+# ---------------------------------------------------------------------------
+# A API não informa a hora da publicação (cada leitura é diária). Para saber
+# QUANDO cada valor apareceu ou foi revisado pela Chesf, registramos o
+# horário da consulta. Só gravamos uma linha quando a data é nova no log ou
+# quando algum valor dela mudou desde o último registro, evitando repetir a
+# janela inteira de ~31 dias a cada execução.
+caminho_log <- here("data", "pedra_leituras_horarias.csv")
+consultado_em <- format(with_tz(Sys.time(), "America/Bahia"), "%Y-%m-%d %H:%M:%S")
+
+df_snapshot <- data.frame(
+  consultado_em = consultado_em,
+  data = df_novo$data,
+  cota = df_novo$cota,
+  afluencia = df_novo$afluencia,
+  defluencia = df_novo$defluencia,
+  volume = df_novo$volume,
+  chuva = sapply(leituras, \(l) numero(campo(l, "Chuva")))
+) |>
+  filter(if_any(c(cota, afluencia, defluencia, volume, chuva), \(x) !is.na(x)))
+
+colunas_valor <- c("cota", "afluencia", "defluencia", "volume", "chuva")
+
+chave <- function(df) {
+  do.call(paste, c(list(as.character(df$data)),
+                   lapply(df[colunas_valor], \(x) ifelse(is.na(x), "NA", format(round(x, 4), nsmall = 4))),
+                   sep = "|"))
+}
+
+if (file.exists(caminho_log)) {
+  df_log <- read.csv(caminho_log) |> mutate(data = as.Date(data))
+  ultimo_por_dia <- df_log |>
+    arrange(consultado_em) |>
+    group_by(data) |>
+    slice_tail(n = 1) |>
+    ungroup()
+  df_mudou <- df_snapshot[!chave(df_snapshot) %in% chave(ultimo_por_dia), ]
+} else {
+  df_log <- df_snapshot[0, ]
+  df_mudou <- df_snapshot
+}
+
+if (nrow(df_mudou) > 0) {
+  write.csv(bind_rows(df_log, df_mudou) |> arrange(desc(consultado_em), desc(data)),
+            caminho_log, row.names = FALSE)
+}
+
+message(paste0("Log horário: ", nrow(df_mudou), " leituras novas ou revisadas registradas em ", consultado_em))
