@@ -1,8 +1,16 @@
 name: Atualizar Dashboard da Pedra
 on:
   schedule:
-    - cron: '0 9 * * *' # 1x ao dia, 06:00 horário da Bahia
+    # PERÍODO CHUVOSO: atualização de hora em hora (minuto 7 para fugir do pico do GitHub no minuto 0)
+    - cron: '7 * * * *'
+    # Ritmo normal (reativar após o período de chuvas):
+    # - cron: '0 9 * * *' # 1x ao dia, 06:00 horário da Bahia
   workflow_dispatch:
+
+# Evita execuções sobrepostas brigando pelo push na main / gh-pages
+concurrency:
+  group: atualizar-dashboard
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
