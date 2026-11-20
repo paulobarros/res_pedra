@@ -93,6 +93,18 @@ aviso_atraso <- if (data_ref < hoje - 1) {
 
 # ---- Mensagem -------------------------------------------------------------
 
+# Glossário em citação expansível: ocupa pouco espaço e abre com um toque
+glossario <- paste0(
+  "<blockquote expandable>📖 <b>Entenda os termos</b>\n",
+  "<b>Volume útil:</b> água disponível para uso, acima do volume morto (nível mínimo de operação), em %\n",
+  "<b>Cota:</b> altura da superfície da água em relação ao nível do mar\n",
+  "<b>Afluência:</b> água que <b>entra</b> no reservatório (rios e chuvas)\n",
+  "<b>Defluência:</b> água que <b>sai</b> pela barragem\n",
+  "<b>Saldo:</b> entrada − saída. Positivo, o reservatório enche; negativo, esvazia\n",
+  "<b>m³/s:</b> metros cúbicos por segundo (1 m³ = 1.000 litros)",
+  "</blockquote>"
+)
+
 msg <- paste0(
   "💧 <b>Reservatório da Pedra</b>\n",
   "Boletim de ", fmt_data(data_ref), "\n\n",
@@ -103,6 +115,7 @@ msg <- paste0(
   "📤 Defluência: <b>", fmt_num(dfl, 1), " m³/s</b> ", linha_comp(comp_dfl, "estável vs. dia anterior"), "\n",
   "⚖️ Saldo do dia: <b>", txt_saldo, "</b>\n",
   if (length(alertas) > 0) paste0("\n", paste(alertas, collapse = "\n"), "\n") else "",
+  "\n", glossario, "\n",
   "\n📊 Fonte: <a href=\"", URL_PAINEL, "\">Painel de Monitoramento do Reservatório da Pedra</a>"
 )
 

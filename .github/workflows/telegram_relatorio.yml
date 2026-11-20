@@ -4,6 +4,9 @@ on:
     # 10:00 UTC = 07:00 na Bahia. A action de dados roda no minuto 7 de cada
     # hora, então às 10:00 o CSV já tem a consulta das 09:07.
     - cron: '0 10 * * *'
+  # TEMPORÁRIO: envio de teste na branch (removido no commit seguinte)
+  push:
+    branches: [telegram-bot]
   workflow_dispatch:
     inputs:
       dry_run:
