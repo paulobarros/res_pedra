@@ -293,3 +293,48 @@ body {
 @media (max-width: 575.98px) {
   .quarto-dashboard #quarto-dashboard-header .navbar .navbar-subtitle { display: none; }
 }
+
+/* ---------- Página Previsão ---------- */
+.sem-dados {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  text-align: center;
+  color: $gray-muted;
+  font-size: 1rem;
+  padding: 2rem;
+}
+
+.aviso-experimental {
+  font-size: .9rem;
+  color: $gray-muted;
+  background: #fff;
+  border-left: 3px solid $tom-media;
+  border-radius: $card-radius;
+  box-shadow: $card-shadow;
+  padding: .75rem 1rem;
+  margin: 0 0 .5rem;
+
+  p { margin: 0; }
+  .bi { color: $tom-media; margin-right: .25rem; }
+}
+
+.nowrap { white-space: nowrap; }
+
+// linha do aviso: altura do conteúdo, sem o card em volta
+.quarto-dashboard .aviso-row {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+
+  > .card, .card {
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+    min-height: 0;
+    .card-body { padding: 0; overflow: visible; }
+  }
+}

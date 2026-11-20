@@ -40,6 +40,8 @@ jobs:
             any::echarts4r
             any::htmltools
             any::zoo
+            any::xml2
+            any::terra
             any::here
             any::tidyr
             any::lubridate
@@ -47,6 +49,13 @@ jobs:
 
       - name: Consultar API da Chesf
         run: Rscript chesf_data.R
+
+      # Telemetria a montante (ANA), previsão de chuva (Open-Meteo) e chuva
+      # observada (MERGE). Cada fonte falha sozinha; o painel sai mesmo assim.
+      - name: Coletar dados da bacia
+        continue-on-error: true
+        timeout-minutes: 10
+        run: Rscript coleta_bacia.R
 
       - name: Publish to GitHub Pages
         uses: quarto-dev/quarto-actions/publish@v2
@@ -62,6 +71,6 @@ jobs:
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-          git add data/pedra_dados.csv data/pedra_leituras_horarias.csv
+          git add data/*.csv
           git commit -m "Dados atualizados: $(date)" || exit 0
           git push origin main

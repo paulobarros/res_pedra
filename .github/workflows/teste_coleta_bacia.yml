@@ -1,0 +1,28 @@
+name: Teste coleta da bacia (temporário)
+on:
+  push:
+    branches: [previsao-fase1]
+    paths: ['.github/workflows/teste_coleta_bacia.yml']
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          cache: true
+          packages: |
+            any::dplyr
+            any::httr2
+            any::xml2
+            any::terra
+      - name: Coleta (sem commitar nada)
+        run: |
+          rm -f data/previsao_chuva_diaria.csv
+          # força a baixar de novo os 3 últimos dias do MERGE para testar o GRIB no runner
+          head -n -3 data/chuva_bacia_merge.csv > /tmp/m.csv && mv /tmp/m.csv data/chuva_bacia_merge.csv
+          Rscript coleta_bacia.R
+          tail -4 data/chuva_bacia_merge.csv
+          cat data/previsao_chuva_acumulada.csv
+          ls -la data/
