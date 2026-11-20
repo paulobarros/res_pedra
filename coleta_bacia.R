@@ -76,7 +76,9 @@ etapa("Previsão de chuva (Open-Meteo ensemble)", {
   ultima <- if (file.exists(ARQ_PREV_DIARIA)) ler_hora(read.csv(ARQ_PREV_DIARIA)$emitido_em[1]) else NA
   idade_h <- if (is.na(ultima)) Inf else as.numeric(difftime(agora, ultima, units = "hours"))
 
-  if (!forcar && idade_h < INTERVALO_PREV_H) {
+  # sem a chuva por cenário o modelo de afluência não roda: baixa de novo
+  sem_membros <- !file.exists("data/previsao_chuva_membros.csv")
+  if (!forcar && !sem_membros && idade_h < INTERVALO_PREV_H) {
     message(sprintf("  previsão de %.1f h atrás; próxima após %d h", idade_h, INTERVALO_PREV_H))
   } else {
     ens <- previsao_ensemble(read.csv(PONTOS_PREVISAO))
