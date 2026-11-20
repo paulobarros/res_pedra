@@ -10,6 +10,10 @@ on:
         description: 'Só mostrar a mensagem no log, sem enviar ao canal'
         type: boolean
         default: false
+      forcar:
+        description: 'Enviar mesmo que o boletim de hoje já tenha saído'
+        type: boolean
+        default: false
 
 concurrency:
   group: telegram-relatorio
@@ -40,4 +44,20 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DRY_RUN: ${{ inputs.dry_run }}
+          FORCAR: ${{ inputs.forcar }}
         run: Rscript telegram_relatorio.R
+
+      # Registra a data do envio para que um segundo disparo no mesmo dia
+      # (Cloudflare + cron do GitHub) não repita o boletim
+      - name: Registrar envio
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add data/telegram_ultimo_envio.txt
+          git commit -m "Boletim do Telegram enviado: $(cat data/telegram_ultimo_envio.txt)" || exit 0
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 10
+          done
+          exit 1

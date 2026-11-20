@@ -22,6 +22,17 @@ ult <- ultimo_registro(df)
 data_ref <- ult$data
 hoje <- as.Date(format(Sys.time(), "%Y-%m-%d", tz = "America/Bahia"))
 
+# Evita boletim duplicado: o workflow pode ser disparado pelo agendador da
+# Cloudflare e pelo cron do GitHub (reserva). Guarda a data do último envio.
+ARQ_ULTIMO_ENVIO <- "data/telegram_ultimo_envio.txt"
+dry_run <- identical(tolower(Sys.getenv("DRY_RUN")), "true")
+forcar  <- identical(tolower(Sys.getenv("FORCAR")), "true")
+if (!dry_run && !forcar && file.exists(ARQ_ULTIMO_ENVIO) &&
+    identical(trimws(readLines(ARQ_ULTIMO_ENVIO, warn = FALSE)[1]), format(hoje))) {
+  message("Boletim de hoje (", format(hoje), ") já foi enviado; nada a fazer.")
+  quit(save = "no", status = 0)
+}
+
 # ---- Textos auxiliares ----------------------------------------------------
 
 seta <- function(comp) {
@@ -164,7 +175,7 @@ msg <- paste0(
 
 # ---- Envio ----------------------------------------------------------------
 
-if (identical(tolower(Sys.getenv("DRY_RUN")), "true")) {
+if (dry_run) {
   message("DRY_RUN: mensagem não enviada.\n")
   cat(msg, "\n")
   quit(save = "no", status = 0)
@@ -189,5 +200,6 @@ corpo <- resp_body_json(resp)
 if (!isTRUE(corpo$ok)) {
   stop(sprintf("Telegram recusou a mensagem: %s %s", corpo$error_code, corpo$description))
 }
+writeLines(format(hoje), ARQ_ULTIMO_ENVIO)
 message(sprintf("Relatório enviado ao canal \"%s\" (mensagem %s).",
                 corpo$result$chat$title, corpo$result$message_id))
