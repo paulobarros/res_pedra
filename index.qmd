@@ -399,6 +399,15 @@ emitido <- if (!is.null(prev_acum)) {
 } else "—"
 pct <- function(x) paste0(round(100 * x), "%")
 acum <- function(n) if (is.null(prev_acum)) NULL else prev_acum[prev_acum$janela_dias == n, ]
+
+# Previsão de afluência (fase 2) — só usa se for recente (< 24 h)
+prev_afl <- ler_se_existe("data/previsao_afluencia.csv")
+if (!is.null(prev_afl)) {
+  prev_afl <- prev_afl |> mutate(data_alvo = as.Date(data_alvo), data_ref = as.Date(data_ref))
+  idade_h <- as.numeric(difftime(Sys.time(), as.POSIXct(prev_afl$emitido_em[1], tz = "America/Bahia"), units = "hours"))
+  if (idade_h > 24) prev_afl <- NULL
+}
+LIMIAR_CHEIA <- 300
 ```
 
 ## Row {.kpi-row height="26%"}
@@ -432,16 +441,22 @@ div(class = "grade-kpi",
       texto = paste0("Chance de ≥25 mm: ", pct(a3$prob_25mm))),
     tom = tom_chuva(a3$prob_25mm)
   ),
-  kpi_card(
-    titulo = "Chuva prevista · 7 dias",
-    valor = if (is.null(a7)) "—" else fmt_num(a7$p50, 0), unidade = "mm",
-    icone = "calendar-week",
-    detalhe = if (is.null(a7)) "Previsão indisponível" else
-      sprintf("Média na bacia · faixa provável <strong class='nowrap'>%s–%s mm</strong>", fmt_num(a7$p10, 0), fmt_num(a7$p90, 0)),
-    comp = if (is.null(a7)) NULL else list(icone = "umbrella",
-      texto = paste0("Chance de ≥50 mm: ", pct(a7$prob_50mm))),
-    tom = tom_chuva(a7$prob_50mm * 1.5)
-  ),
+  {
+    # afluência prevista: pior dia entre hoje e +2 dias
+    pa <- if (is.null(prev_afl)) NULL else prev_afl |> filter(data_alvo >= Sys.Date(), data_alvo <= Sys.Date() + 2)
+    tem_pa <- !is.null(pa) && nrow(pa) > 0
+    pior <- if (tem_pa) slice_max(pa, prob_cheia, n = 1, with_ties = FALSE) else NULL
+    kpi_card(
+      titulo = "Afluência prevista · 3 dias",
+      valor = if (tem_pa) paste0("~", fmt_num(max(pa$p50), 0)) else "—", unidade = if (tem_pa) "m³/s" else NULL,
+      icone = "graph-up-arrow",
+      detalhe = if (!tem_pa) "Previsão de afluência indisponível" else
+        sprintf("Cenário alto (P90) até <strong class='nowrap'>%s m³/s</strong> · experimental", fmt_num(max(pa$p90), 0)),
+      comp = if (tem_pa) list(icone = "exclamation-triangle",
+        texto = sprintf("Chance de cheia (>%d m³/s): %s", LIMIAR_CHEIA, pct(max(pa$prob_cheia)))) else NULL,
+      tom = if (!tem_pa) "neutro" else if (max(pa$prob_cheia) >= 0.4) "ruim" else if (max(pa$prob_cheia) >= 0.15) "media" else "bom"
+    )
+  },
   kpi_card(
     titulo = "Chuva observada na bacia",
     valor = if (is.null(ult_obs)) "—" else fmt_num(ult_obs$chuva_media, 1), unidade = "mm",
@@ -471,7 +486,39 @@ div(class = "grade-kpi",
 ### Column {width=50% .tabset}
 
 ```{r}
-#| title: "Chuva prevista · por dia"
+#| title: "Afluência · 7 dias"
+
+if (is.null(prev_afl)) {
+  div(class = "sem-dados", "Previsão de afluência indisponível no momento.")
+} else {
+  obs_afl <- df |> filter(!is.na(afluencia), data >= min(prev_afl$data_alvo) - 21) |>
+    transmute(data, observada = afluencia)
+  base_afl <- full_join(obs_afl, prev_afl |> select(data = data_alvo, p10, p50, p90, prob_cheia), by = "data") |>
+    arrange(data) |>
+    mutate(faixa_base = p10, faixa = p90 - p10)
+
+  base_afl |>
+    e_charts(data) |>
+    e_band2(faixa_base, p90, name = "Faixa provável (P10–P90)", itemStyle = list(color = paleta[["dark_cyan"]], opacity = 0.18)) |>
+    e_line(p50, name = "Previsão (mediana)", symbol = "circle", symbolSize = 7,
+           lineStyle = list(width = 2.5, type = "dashed", color = paleta[["dark_teal"]]),
+           itemStyle = list(color = paleta[["dark_teal"]])) |>
+    e_line(observada, name = "Observada (AXIA)", symbol = "none",
+           lineStyle = list(width = 2.5, color = paleta[["golden_orange"]]),
+           itemStyle = list(color = paleta[["golden_orange"]])) |>
+    e_mark_line(serie = "Observada (AXIA)", data = list(yAxis = LIMIAR_CHEIA),
+                lineStyle = list(color = paleta[["rusty_spice"]], type = "dotted", width = 1.5),
+                label = list(formatter = paste0("cheia (", LIMIAR_CHEIA, " m³/s)"), color = paleta[["rusty_spice"]],
+                             position = "insideEndTop"), symbol = "none", silent = TRUE) |>
+    estilo_ec(grid_top = 60) |>
+    eixo_data() |>
+    nota_anomalia(sprintf("Afluência (m³/s) · experimental · faixa combina %d cenários de chuva e o erro do modelo",
+                          max(prev_afl$cenarios)))
+}
+```
+
+```{r}
+#| title: "Chuva · por dia"
 
 if (is.null(prev_dia)) {
   div(class = "sem-dados", "Previsão indisponível no momento.")
@@ -490,7 +537,7 @@ if (is.null(prev_dia)) {
 ```
 
 ```{r}
-#| title: "Chance de chuva · por dia"
+#| title: "Chance de chuva"
 
 if (is.null(prev_dia)) {
   div(class = "sem-dados", "Previsão indisponível no momento.")
@@ -571,9 +618,9 @@ if (!tem_m1) {
 
 # Sobre
 
-## Row
+## Row {height="58%"}
 
-### Column {width="60%"}
+### Column {width="34%"}
 
 ::: {.card .metadados title="Glossário"}
 
@@ -587,23 +634,67 @@ if (!tem_m1) {
 
 :::
 
-::: {.card title="Fonte de dados"}
+### Column {width="36%"}
 
-Dados do [sistema de gestão de recursos hídricos da AXIA Nordeste](https://axia.com.br/axia-nordeste-gestao-de-recursos-hidricos){target="_blank"} (antiga CHESF), consultados automaticamente via API.
+::: {.card .seguranca title="Segurança e avisos oficiais"}
+
+<i class="bi bi-shield-exclamation"></i> **[Plano de Ação de Emergência (PAE) da UHE Pedra](https://web.archive.org/web/20260517214034/https://www.chesf.com.br/SistemaChesf/Documents/PAE_UHE_PEDRA.pdf){target="_blank"}** — rev. 02, março/2026. Traz a Zona de Autossalvamento (ZAS), as rotas de fuga e os pontos de encontro em Jequié, e os níveis de resposta a emergências. *Cópia arquivada no Internet Archive; o documento não está mais publicado no site atual da AXIA.*
+
+<i class="bi bi-megaphone"></i> **[Comunicados da AXIA Nordeste](https://axia.com.br/axia-nordeste-gestao-de-recursos-hidricos){target="_blank"}** — cartas circulares com a programação de vazões da Pedra. Os novos comunicados sobre a Pedra também são repassados no canal do Telegram.
+
+<i class="bi bi-phone"></i> **Aviso por SMS da AXIA** — envie **PEDRA** para **27569** para receber as mudanças de vazão da usina.
+
+<i class="bi bi-water"></i> **Vazão de restrição do vale: 800 m³/s** — defluência a partir da qual o trecho do rio abaixo da barragem passa a ter restrições, segundo a AXIA.
+
+<i class="bi bi-telephone"></i> **Defesa Civil: 199** · **Bombeiros: 193**
 
 :::
 
-### Column {width="40%"}
+### Column {width="30%"}
 
-::: {.card .autor title="Desenvolvido por"}
+::: {.card .fontes title="Fonte de dados"}
 
-![](images/AvatarPB-Yellow.png){width=180px fig-align="center"}
+**Reservatório** — [AXIA Nordeste](https://axia.com.br/axia-nordeste-gestao-de-recursos-hidricos){target="_blank"} (antiga CHESF): cota, afluência, defluência e volume útil, consultados de hora em hora via API.
 
-<h3>Paulo Barros</h3>
+**Rio a montante** — estações telemétricas da AXIA publicadas pela [ANA](https://www.snirh.gov.br/hidroweb/){target="_blank"}; séries históricas de vazão do HidroWeb e volume do reservatório no [SAR/ANA](https://www.ana.gov.br/sar/){target="_blank"}.
 
-Biólogo e Cientista de Dados
-Mestre em Genética, Biodiversidade e Conservação
+**Chuva observada** — [MERGE/CPTEC-INPE](https://ftp.cptec.inpe.br/modelos/tempo/MERGE/){target="_blank"} (satélite + pluviômetros), média na bacia.
 
-[{{< fa brands instagram >}} **\@pbarros.dados**](https://instagram.com/pbarros.dados){target="_blank"}
+**Previsão de chuva** — modelos ECMWF, GEFS e ICON via [Open-Meteo](https://open-meteo.com/){target="_blank"} (CC-BY 4.0).
+
+**Bacia** — ottobacias da [Base Hidrográfica da ANA](https://www.snirh.gov.br/){target="_blank"}.
+
+:::
+
+## Row {height="42%"}
+
+::: {.card .apoie title="Desenvolvido por · Apoie o projeto"}
+
+```{=html}
+<div class="apoie-grade">
+  <div class="apoie-autor">
+    <img src="images/apoie_paulo.jpg" class="apoie-foto" alt="Foto de Paulo Barros">
+    <div>
+      <h3>Paulo Barros</h3>
+      <p>Biólogo e mestre em Genética pela UESB, com pós-graduação em Data Science pela Uniamérica.</p>
+      <p><a href="https://instagram.com/pbarros.dados" target="_blank"><i class="bi bi-instagram"></i> <strong>@pbarros.dados</strong></a>
+      · <a href="https://www.datajequie.com.br" target="_blank"><strong>dataJequié</strong></a></p>
+    </div>
+  </div>
+  <div class="apoie-texto">
+    <p>Este painel é <strong>independente, gratuito e feito com dados públicos</strong>. Ele nasceu depois da cheia de 2022, para que qualquer pessoa em Jequié acompanhe o reservatório e receba os avisos no Telegram.</p>
+    <p>Manter tudo no ar custa tempo e dinheiro: coleta automática a cada hora, previsões e horas de trabalho para conferir e explicar os dados. <strong>Qualquer valor ajuda</strong> a manter o projeto sem anúncios e a fazê-lo crescer.</p>
+  </div>
+  <div class="apoie-pix">
+    <img src="images/pix_qrcode.jpg" class="apoie-qrcode" alt="QR code do Pix para apoiar o projeto">
+    <div>
+      <p class="apoie-pix-titulo">Apoie via Pix</p>
+      <p>Abra o app do banco, escolha <em>Pix › Ler QR code</em>, ou copie a chave aleatória:</p>
+      <code class="apoie-chave">8908ca84-84c4-40bf-afec-c046806908f8</code>
+      <button type="button" class="apoie-copiar" onclick="navigator.clipboard.writeText('8908ca84-84c4-40bf-afec-c046806908f8').then(()=>{this.textContent='Chave copiada ✓';setTimeout(()=>this.textContent='Copiar chave Pix',2500)})"><i class="bi bi-clipboard"></i> Copiar chave Pix</button>
+    </div>
+  </div>
+</div>
+```
 
 :::

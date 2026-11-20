@@ -106,6 +106,19 @@ linha_previsao <- if (!is.null(prev) && any(prev$janela_dias == 3)) {
           fmt_num(p3$p50, 0), fmt_num(p3$p10, 0), fmt_num(p3$p90, 0), round(100 * p3$prob_25mm))
 } else ""
 
+# Previsão de afluência (fase 2, experimental) — próximos 3 dias, se recente
+prev_afl <- ler_csv("data/previsao_afluencia.csv")
+linha_afluencia <- ""
+if (!is.null(prev_afl)) {
+  emit <- as.POSIXct(prev_afl$emitido_em[1], tz = "America/Bahia")
+  prox <- prev_afl[as.Date(prev_afl$data_alvo) >= hoje & as.Date(prev_afl$data_alvo) <= hoje + 2, ]
+  if (nrow(prox) > 0 && difftime(Sys.time(), emit, units = "hours") < 24) {
+    linha_afluencia <- sprintf(
+      "🔮 Afluência prevista (3 dias): <b>~%s m³/s</b> <i>(cenário alto até %s m³/s; chance de cheia: %s%%)</i>\n<i>Previsão experimental.</i>\n\n",
+      fmt_num(max(prox$p50), 0), fmt_num(max(prox$p90), 0), round(100 * max(prox$prob_cheia)))
+  }
+}
+
 # ---- Mensagem -------------------------------------------------------------
 
 # Glossário em citação expansível: ocupa pouco espaço e abre com um toque
@@ -116,6 +129,7 @@ glossario <- paste0(
   "<b>Afluência:</b> água que <b>entra</b> no reservatório (rios e chuvas)\n",
   "<b>Defluência:</b> água que <b>sai</b> pela barragem\n",
   "<b>Saldo:</b> entrada − saída. Positivo, o reservatório enche; negativo, esvazia\n",
+  "<b>Chance de cheia:</b> fração dos cenários de previsão com afluência acima de 300 m³/s\n",
   "<b>Bacia:</b> toda a área cujas chuvas escoam para o reservatório (~40 mil km², 46 municípios)\n",
   "<b>m³/s:</b> metros cúbicos por segundo (1 m³ = 1.000 litros)",
   "</blockquote>"
@@ -131,6 +145,7 @@ msg <- paste0(
   "📊 Saldo: <b>", txt_saldo, "</b>\n\n",
   if (length(alertas) > 0) paste0(paste(alertas, collapse = "\n"), "\n\n") else "",
   linha_previsao,
+  linha_afluencia,
   glossario, "\n\n",
   "🔗 Fonte: <a href=\"", URL_PAINEL, "\">Painel de Monitoramento do Reservatório da Pedra</a>"
 )

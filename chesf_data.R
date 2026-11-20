@@ -129,3 +129,37 @@ if (nrow(df_mudou) > 0) {
 }
 
 message(paste0("Log horário: ", nrow(df_mudou), " leituras novas ou revisadas registradas em ", consultado_em))
+
+# ---------------------------------------------------------------------------
+# Rio de Contas a jusante: Reservatório de Funil e posto de Ubaitaba
+# ---------------------------------------------------------------------------
+# A mesma resposta da API traz esses postos. Guardamos desde já para um
+# futuro módulo de previsão no baixo Rio de Contas (Ubaitaba/Ubatã), em que a
+# defluência da Pedra entra como dado de entrada. Falhas aqui não afetam a Pedra.
+tryCatch({
+  postos_jusante <- c("RESERVATÓRIO DE FUNIL" = "funil", "UBAITABA" = "ubaitaba")
+  jusante <- bind_rows(lapply(bacias, function(bacia) {
+    bind_rows(lapply(bacia$Postos, function(p) {
+      nome <- toupper(trimws(p$Nome))
+      if (!nome %in% names(postos_jusante) || length(p$Leituras) == 0) return(NULL)
+      data.frame(
+        posto = postos_jusante[[nome]],
+        data = as.Date(sapply(p$Leituras, \(l) substr(campo(l, "Data"), 1, 10))),
+        cota = sapply(p$Leituras, \(l) numero(campo(l, if (isTRUE(p$isReservatorio)) "Cota24h" else "CotaMedia"))),
+        afluencia = sapply(p$Leituras, \(l) numero(campo(l, "Afluencia"))),
+        defluencia = sapply(p$Leituras, \(l) numero(campo(l, "Defluencia"))),
+        volume = sapply(p$Leituras, \(l) numero(campo(l, "VolumeUtil"))),
+        vazao = sapply(p$Leituras, \(l) numero(campo(l, "VazaoMedia")))
+      )
+    }))
+  })) |>
+    filter(if_any(c(cota, afluencia, defluencia, volume, vazao), \(x) !is.na(x)))
+
+  caminho_jusante <- here("data", "jusante_rio_contas.csv")
+  antigo <- if (file.exists(caminho_jusante)) read.csv(caminho_jusante) |> mutate(data = as.Date(data)) else NULL
+  bind_rows(jusante, antigo) |>
+    distinct(posto, data, .keep_all = TRUE) |>
+    arrange(posto, desc(data)) |>
+    write.csv(caminho_jusante, row.names = FALSE)
+  message("Jusante (Funil/Ubaitaba): ", nrow(jusante), " leituras consultadas")
+}, error = function(e) message("Jusante: falhou (", conditionMessage(e), ")"))
