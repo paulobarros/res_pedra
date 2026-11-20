@@ -587,13 +587,36 @@ if (!tem_m1) {
 
 :::
 
-::: {.card title="Fonte de dados"}
+::: {.card .seguranca title="Segurança e avisos oficiais"}
 
-Dados do [sistema de gestão de recursos hídricos da AXIA Nordeste](https://axia.com.br/axia-nordeste-gestao-de-recursos-hidricos){target="_blank"} (antiga CHESF), consultados automaticamente via API.
+<i class="bi bi-shield-exclamation"></i> **[Plano de Ação de Emergência (PAE) da UHE Pedra](https://web.archive.org/web/20260517214034/https://www.chesf.com.br/SistemaChesf/Documents/PAE_UHE_PEDRA.pdf){target="_blank"}** — rev. 02, março/2026. Traz a Zona de Autossalvamento (ZAS), as rotas de fuga e os pontos de encontro em Jequié, e os níveis de resposta a emergências. *Cópia arquivada no Internet Archive; o documento não está mais publicado no site atual da AXIA.*
+
+<i class="bi bi-megaphone"></i> **[Comunicados da AXIA Nordeste](https://axia.com.br/axia-nordeste-gestao-de-recursos-hidricos){target="_blank"}** — cartas circulares com a programação de vazões da Pedra. Os novos comunicados sobre a Pedra também são repassados no canal do Telegram.
+
+<i class="bi bi-phone"></i> **Aviso por SMS da AXIA** — envie **PEDRA** para **27569** para receber as mudanças de vazão da usina.
+
+<i class="bi bi-water"></i> **Vazão de restrição do vale: 800 m³/s** — defluência a partir da qual o trecho do rio abaixo da barragem passa a ter restrições, segundo a AXIA.
+
+<i class="bi bi-telephone"></i> **Defesa Civil: 199** · **Bombeiros: 193**
 
 :::
 
+
 ### Column {width="40%"}
+
+::: {.card .fontes title="Fonte de dados"}
+
+**Reservatório** — [AXIA Nordeste](https://axia.com.br/axia-nordeste-gestao-de-recursos-hidricos){target="_blank"} (antiga CHESF): cota, afluência, defluência e volume útil, consultados de hora em hora via API.
+
+**Rio a montante** — estações telemétricas da AXIA publicadas pela [ANA](https://www.snirh.gov.br/hidroweb/){target="_blank"}; séries históricas de vazão do HidroWeb e volume do reservatório no [SAR/ANA](https://www.ana.gov.br/sar/){target="_blank"}.
+
+**Chuva observada** — [MERGE/CPTEC-INPE](https://ftp.cptec.inpe.br/modelos/tempo/MERGE/){target="_blank"} (satélite + pluviômetros), média na bacia.
+
+**Previsão de chuva** — modelos ECMWF, GEFS e ICON via [Open-Meteo](https://open-meteo.com/){target="_blank"} (CC-BY 4.0).
+
+**Bacia** — ottobacias da [Base Hidrográfica da ANA](https://www.snirh.gov.br/){target="_blank"}.
+
+:::
 
 ::: {.card .autor title="Desenvolvido por"}
 

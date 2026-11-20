@@ -28,7 +28,7 @@ jobs:
       - name: Instalar dependências do sistema Linux
         run: |
           sudo apt-get update
-          sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libssl-dev libfontconfig1-dev
+          sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libssl-dev libfontconfig1-dev poppler-utils
 
       - name: Instalar dependências com Cache
         uses: r-lib/actions/setup-r-dependencies@v2
@@ -56,6 +56,15 @@ jobs:
         continue-on-error: true
         timeout-minutes: 10
         run: Rscript coleta_bacia.R
+
+      # Cartas circulares novas da AXIA sobre a Pedra -> canal do Telegram
+      - name: Comunicados da AXIA
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: Rscript comunicados_axia.R
 
       - name: Publish to GitHub Pages
         uses: quarto-dev/quarto-actions/publish@v2
