@@ -377,6 +377,197 @@ an_dfl$dados |>
   e_datazoom(type = "slider", height = 22, bottom = 40)
 ```
 
+# Previsão
+
+```{r}
+#| label: dados-bacia
+
+ler_se_existe <- function(arq, ...) if (file.exists(arq)) read.csv(arq, ...) else NULL
+
+prev_dia  <- ler_se_existe("data/previsao_chuva_diaria.csv") |>
+  (\(x) if (is.null(x)) NULL else mutate(x, dia = as.Date(dia)))()
+prev_acum <- ler_se_existe("data/previsao_chuva_acumulada.csv")
+merge_obs <- ler_se_existe("data/chuva_bacia_merge.csv") |>
+  (\(x) if (is.null(x)) NULL else mutate(x, data = as.Date(data)))()
+telem <- ler_se_existe("data/telemetria_montante.csv", colClasses = c(codigo = "character")) |>
+  (\(x) if (is.null(x)) NULL else
+    mutate(x, data_hora = as.POSIXct(data_hora, format = "%Y-%m-%d %H:%M", tz = "America/Bahia")))()
+
+emitido <- if (!is.null(prev_acum)) {
+  format(as.POSIXct(prev_acum$emitido_em[1], tz = "America/Bahia"), "%d/%m às %H:%M")
+} else "—"
+pct <- function(x) paste0(round(100 * x), "%")
+acum <- function(n) if (is.null(prev_acum)) NULL else prev_acum[prev_acum$janela_dias == n, ]
+```
+
+## Row {.kpi-row height="26%"}
+
+```{r}
+#| expandable: false
+
+a3 <- acum(3); a7 <- acum(7)
+
+tom_chuva <- function(p_25) {
+  if (is.null(p_25) || length(p_25) == 0) "neutro"
+  else if (p_25 >= 0.6) "ruim" else if (p_25 >= 0.3) "media" else "neutro"
+}
+
+# Chuva observada: último dia do MERGE e acumulado de 7 dias
+ult_obs <- if (!is.null(merge_obs)) slice_max(merge_obs, data, n = 1) else NULL
+obs7 <- if (!is.null(merge_obs)) sum(merge_obs$chuva_media[merge_obs$data > max(merge_obs$data) - 7]) else NA
+
+# Vazão a montante (Montante 1 = Rio de Contas, ~70 km acima da barragem)
+m1 <- if (!is.null(telem)) telem |> filter(codigo == "52405100", !is.na(vazao)) |> arrange(data_hora) else NULL
+tem_m1 <- !is.null(m1) && nrow(m1) > 0
+
+div(class = "grade-kpi",
+  kpi_card(
+    titulo = "Chuva prevista · 3 dias",
+    valor = if (is.null(a3)) "—" else fmt_num(a3$p50, 0), unidade = "mm",
+    icone = "cloud-rain-heavy",
+    detalhe = if (is.null(a3)) "Previsão indisponível" else
+      sprintf("Média na bacia · faixa provável <strong class='nowrap'>%s–%s mm</strong>", fmt_num(a3$p10, 0), fmt_num(a3$p90, 0)),
+    comp = if (is.null(a3)) NULL else list(icone = "umbrella",
+      texto = paste0("Chance de ≥25 mm: ", pct(a3$prob_25mm))),
+    tom = tom_chuva(a3$prob_25mm)
+  ),
+  kpi_card(
+    titulo = "Chuva prevista · 7 dias",
+    valor = if (is.null(a7)) "—" else fmt_num(a7$p50, 0), unidade = "mm",
+    icone = "calendar-week",
+    detalhe = if (is.null(a7)) "Previsão indisponível" else
+      sprintf("Média na bacia · faixa provável <strong class='nowrap'>%s–%s mm</strong>", fmt_num(a7$p10, 0), fmt_num(a7$p90, 0)),
+    comp = if (is.null(a7)) NULL else list(icone = "umbrella",
+      texto = paste0("Chance de ≥50 mm: ", pct(a7$prob_50mm))),
+    tom = tom_chuva(a7$prob_50mm * 1.5)
+  ),
+  kpi_card(
+    titulo = "Chuva observada na bacia",
+    valor = if (is.null(ult_obs)) "—" else fmt_num(ult_obs$chuva_media, 1), unidade = "mm",
+    icone = "cloud-drizzle",
+    detalhe = if (is.null(ult_obs)) "Sem dados do MERGE" else
+      sprintf("Até 9h de %s · máx. local <strong>%s mm</strong>", format(ult_obs$data, "%d/%m"), fmt_num(ult_obs$chuva_max, 0)),
+    comp = list(icone = "calendar3", texto = paste0("Acumulado 7 dias: ", fmt_num(obs7, 0), " mm")),
+    tom = "neutro"
+  ),
+  kpi_card(
+    titulo = "Rio de Contas a montante",
+    valor = if (tem_m1) fmt_num(tail(m1$vazao, 1), 1) else "—", unidade = if (tem_m1) "m³/s" else NULL,
+    icone = "broadcast",
+    detalhe = if (tem_m1) sprintf("Estação Montante 1 · %s", format(tail(m1$data_hora, 1), "%d/%m %H:%M")) else
+      "Telemetria da ANA indisponível no momento",
+    comp = if (tem_m1) {
+      ant <- m1$vazao[which.min(abs(as.numeric(difftime(m1$data_hora, tail(m1$data_hora, 1) - 86400))))]
+      comparacao(tail(m1$vazao, 1), ant, " m³/s", "em 24 h", 1)
+    } else NULL,
+    tom = "neutro"
+  )
+)
+```
+
+## Row {height="74%"}
+
+### Column {width=50% .tabset}
+
+```{r}
+#| title: "Chuva prevista · por dia"
+
+if (is.null(prev_dia)) {
+  div(class = "sem-dados", "Previsão indisponível no momento.")
+} else {
+  prev_dia |>
+    mutate(rotulo = format(dia, "%d/%m"), erro_inf = p10, erro_sup = p90) |>
+    e_charts(rotulo) |>
+    e_bar(p50, name = "Mediana (P50)", barMaxWidth = 40,
+          itemStyle = list(borderRadius = c(5, 5, 0, 0))) |>
+    e_error_bar(erro_inf, erro_sup, name = "Faixa provável (P10–P90)",
+                itemStyle = list(borderWidth = 2, color = cores$texto)) |>
+    e_color(paleta[["dark_cyan"]]) |>
+    estilo_ec(grid_top = 60) |>
+    nota_anomalia(sprintf("Média na bacia (mm) · barra: mediana · traço: P10–P90 · emitida %s", emitido))
+}
+```
+
+```{r}
+#| title: "Chance de chuva · por dia"
+
+if (is.null(prev_dia)) {
+  div(class = "sem-dados", "Previsão indisponível no momento.")
+} else {
+  prev_dia |>
+    mutate(rotulo = format(dia, "%d/%m"),
+           across(starts_with("prob"), ~ round(100 * .x))) |>
+    e_charts(rotulo) |>
+    e_bar(prob_5mm, name = "≥ 5 mm", barGap = "10%") |>
+    e_bar(prob_10mm, name = "≥ 10 mm") |>
+    e_bar(prob_25mm, name = "≥ 25 mm") |>
+    e_color(unname(paleta[c("pearl_aqua", "dark_cyan", "dark_teal")])) |>
+    estilo_ec(grid_top = 60) |>
+    e_y_axis(max = 100) |>
+    nota_anomalia("Chance (%) de a chuva média na bacia passar de 5, 10 e 25 mm no dia")
+}
+```
+
+### Column {width=50% .tabset}
+
+```{r}
+#| title: "Chuva na bacia × afluência"
+
+if (is.null(merge_obs)) {
+  div(class = "sem-dados", "Sem dados de chuva observada.")
+} else {
+  base_hid <- merge_obs |>
+    left_join(df |> select(data, afluencia), by = "data") |>
+    arrange(data)
+  # Hietograma: a chuva "cai" do topo (eixo invertido à direita) e a vazão
+  # fica embaixo, para ver a resposta do rio à chuva sem sobreposição.
+  max_chuva <- max(base_hid$chuva_media, na.rm = TRUE)
+  max_afl <- max(base_hid$afluencia, na.rm = TRUE)
+
+  base_hid |>
+    e_charts(data) |>
+    e_line(afluencia, name = "Afluência (m³/s)", symbol = "none",
+           lineStyle = list(width = 2), areaStyle = list(opacity = 0.10), connectNulls = TRUE) |>
+    e_bar(chuva_media, name = "Chuva na bacia (mm)", y_index = 1, barMaxWidth = 8) |>
+    e_color(c(paleta[["dark_cyan"]], paleta[["dark_teal"]])) |>
+    estilo_ec(grid_bottom = 110, grid_top = 60) |>
+    e_y_axis(index = 0, max = ceiling(max_afl * 1.8 / 10) * 10) |>
+    e_y_axis(index = 1, inverse = TRUE, max = ceiling(max_chuva * 3 / 5) * 5,
+             splitLine = list(show = FALSE),
+             axisLabel = list(color = cores$muted, fontSize = fs_eixo)) |>
+    eixo_data() |>
+    nota_anomalia("Chuva na bacia (mm, eixo direito) × afluência (m³/s)") |>
+    e_datazoom(type = "slider", height = 22, bottom = 40)
+}
+```
+
+```{r}
+#| title: "Rio a montante · telemetria"
+
+if (!tem_m1) {
+  div(class = "sem-dados",
+      "A telemetria das estações a montante (ANA) ainda não foi coletada ou o serviço está fora do ar.",
+      tags$br(), "Os dados aparecem aqui assim que o serviço responder.")
+} else {
+  ini <- max(telem$data_hora) - 15 * 86400
+  telem |>
+    filter(data_hora >= ini, !is.na(vazao)) |>
+    left_join(ESTACOES_MONTANTE |> select(codigo, nome), by = "codigo") |>
+    group_by(nome) |>
+    e_charts(data_hora) |>
+    e_line(vazao, symbol = "none", lineStyle = list(width = 2)) |>
+    e_color(unname(paleta[c("dark_teal", "golden_orange", "rusty_spice", "pearl_aqua")])) |>
+    estilo_ec(grid_top = 60) |>
+    nota_anomalia("Vazão horária (m³/s) a montante · últimos 15 dias")
+}
+```
+
+## Row {.aviso-row}
+
+::: {.aviso-experimental}
+<i class="bi bi-info-circle"></i> **Módulo experimental.** As previsões de chuva vêm de modelos meteorológicos globais (via Open-Meteo, CC-BY 4.0) e a chuva observada do MERGE/CPTEC. Os valores são médias sobre toda a bacia de ~40 mil km² a montante da barragem; a chuva em pontos isolados pode ser bem maior. Este painel é informativo e não substitui os comunicados da AXIA Nordeste nem da Defesa Civil.
+:::
+
 # Sobre
 
 ## Row
