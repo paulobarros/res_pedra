@@ -15,7 +15,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           resposta=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto" \
-            -F "chat_id=${TELEGRAM_CHAT_ID}" \
+            --form-string "chat_id=${TELEGRAM_CHAT_ID}" \
             -F "photo=@images/logo_telegram.jpg")
           echo "$resposta" | jq '{ok, error_code, description, message_id: .result.message_id}'
           echo "$resposta" | jq -e '.ok' > /dev/null
