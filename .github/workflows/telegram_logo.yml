@@ -1,0 +1,22 @@
+name: Enviar logo ao Telegram (temporário)
+on:
+  push:
+    branches: [telegram-bot]
+    paths: ['.github/workflows/telegram_logo.yml']
+
+jobs:
+  enviar-logo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Logo com fundo branco e envio
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          convert images/logo.png -background white -alpha remove -alpha off logo.jpg
+          resposta=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto" \
+            -F "chat_id=${TELEGRAM_CHAT_ID}" \
+            -F "photo=@logo.jpg")
+          echo "$resposta" | jq '{ok, error_code, description, message_id: .result.message_id}'
+          echo "$resposta" | jq -e '.ok' > /dev/null
