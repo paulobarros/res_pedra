@@ -1,0 +1,19 @@
+// Agendador externo das GitHub Actions do res_pedra.
+// O cron nativo do GitHub descarta boa parte das execuções agendadas;
+// aqui a Cloudflare dispara os workflows via API (workflow_dispatch).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "res-pedra-agendador",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "observability": { "enabled": true },
+  "triggers": {
+    "crons": [
+      "7 * * * *",   // dados + painel: de hora em hora, no minuto 7
+      "0 10 * * *"   // boletim do Telegram: 10:00 UTC = 07:00 na Bahia
+    ]
+  }
+  // secret GITHUB_TOKEN: fine-grained PAT, só o repo res_pedra,
+  // só "Actions: Read and write" -> npx wrangler secret put GITHUB_TOKEN
+}

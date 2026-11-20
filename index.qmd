@@ -31,6 +31,7 @@ library(echarts4r)
 
 # Cálculos compartilhados com o bot do Telegram
 source("R/indicadores.R")
+source("R/fontes_bacia.R")   # lista de estações a montante
 
 df <- carregar_dados()
 last_record <- ultimo_registro(df)
