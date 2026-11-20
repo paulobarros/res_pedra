@@ -29,14 +29,11 @@ library(lubridate)
 library(htmltools)
 library(echarts4r)
 
-df <- read.csv("data/pedra_dados.csv") |>
-  mutate(data = as.Date(data)) |>
-  arrange(desc(data))
+# Cálculos compartilhados com o bot do Telegram
+source("R/indicadores.R")
 
-# Último dia com pelo menos uma medição
-last_record <- df |>
-  filter(if_any(c(cota, afluencia, defluencia, volume), ~ !is.na(.x))) |>
-  slice(1)
+df <- carregar_dados()
+last_record <- ultimo_registro(df)
 
 # Paleta dos gráficos
 paleta <- c(
@@ -74,26 +71,13 @@ icone_esvaziando <- "path://M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0
 
 # ---- Helpers --------------------------------------------------------------
 
-fmt_num <- function(x, dig = 1) {
-  if (is.na(x)) return("—")
-  format(round(x, dig), nsmall = dig, decimal.mark = ",", big.mark = ".")
-}
+# Ícone Bootstrap para o sentido da variação
+icone_sentido <- c(sobe = "arrow-up-circle", desce = "arrow-down-circle", igual = "dash-circle")
 
-valor_em <- function(col, dias_atras) {
-  alvo <- last_record$data - dias_atras
-  v <- df[[col]][df$data == alvo]
-  if (length(v) == 0) NA_real_ else v[1]
-}
-
-# Linha de comparação com seta (up/down/dash)
-comparacao <- function(atual, anterior, unidade, rotulo, dig = 1) {
-  if (is.na(atual) || is.na(anterior)) {
-    return(list(icone = "dash-circle", texto = paste("Sem dado para", rotulo)))
-  }
-  d <- atual - anterior
-  icone <- if (abs(d) < 10^-dig) "dash-circle" else if (d > 0) "arrow-up-circle" else "arrow-down-circle"
-  sinal <- if (d > 0) "+" else if (d < 0) "−" else ""
-  list(icone = icone, texto = paste0(sinal, fmt_num(abs(d), dig), unidade, " ", rotulo))
+icone_comp <- function(comp) {
+  if (!is.null(comp$icone)) return(comp$icone)
+  if (is.na(comp$sentido)) return("dash-circle")
+  icone_sentido[[comp$sentido]]
 }
 
 # Card de KPI no estilo "grade de cards"
@@ -109,7 +93,8 @@ kpi_card <- function(titulo, valor, unidade = NULL, icone, detalhe = NULL,
         if (!is.null(unidade)) span(class = "kpi-unidade", unidade)),
     if (!is.null(detalhe)) div(class = "kpi-detalhe", HTML(detalhe)),
     if (!is.null(comp)) div(class = "kpi-comparacao",
-      tags$i(class = paste0("bi bi-", comp$icone)), span(comp$texto))
+      tags$i(class = paste0("bi bi-", icone_comp(comp))),
+      span(comp$texto))
   )
 }
 
@@ -139,44 +124,6 @@ estilo_ec <- function(e, grid_bottom = 70, grid_top = 40) {
     e_locale("PT-br")
 }
 
-# ---- Janelas de anomalia (aumento de vazão) --------------------------------
-# Para cada dia t: compara a média dos últimos `k` dias (t-k+1 .. t) com uma
-# referência = média dos `n_ref` dias imediatamente anteriores à janela.
-#
-# intensidade = média da janela ÷ max(referência, ref_min)
-#   - `ref_min` evita que a razão "exploda" quando a referência está perto de
-#     zero (estiagem): 9 m³/s contra 0,5 m³/s não é 18× na prática.
-#   - `min_dif` exige um aumento absoluto mínimo (m³/s) para marcar.
-# `niveis` são os limiares da escala (nome = rótulo, valor = "× a referência").
-# Janelas que se sobrepõem viram um intervalo só, com o nível mais alto.
-anomalias_vazao <- function(dados, col, k = 3, n_ref = 15, niveis = c(Alta = 2),
-                            ref_min = 0, min_dif = 5) {
-  niveis <- sort(niveis)
-  d <- dados |>
-    filter(!is.na(.data[[col]])) |>
-    arrange(data)
-  x <- d[[col]]
-  media_k <- zoo::rollapplyr(x, k, mean, fill = NA)
-  ref <- dplyr::lag(zoo::rollapplyr(x, n_ref, mean, fill = NA), k)
-  razao <- media_k / pmax(ref, ref_min)
-  nivel <- findInterval(razao, niveis)          # 0 = normal, 1.. = índice do nível
-  nivel[is.na(ref) | is.na(razao) | (media_k - ref) < min_dif] <- 0
-
-  d <- d |> mutate(referencia = round(ref, 1), nivel = nivel)
-
-  idx <- which(nivel > 0)
-  janelas <- tibble(inicio = d$data[pmax(idx - k + 1, 1)], fim = d$data[idx], nivel = nivel[idx])
-  if (nrow(janelas) > 1) {
-    janelas <- janelas |>
-      arrange(inicio) |>
-      mutate(grupo = cumsum(as.numeric(inicio) > lag(cummax(as.numeric(fim)), default = -Inf) + 1)) |>
-      summarise(inicio = min(inicio), fim = max(fim), nivel = max(nivel), .by = grupo) |>
-      select(-grupo)
-  }
-  janelas <- janelas |> mutate(rotulo = names(niveis)[nivel])
-  list(dados = d, janelas = janelas, niveis = niveis)
-}
-
 # Pinta as janelas como faixas sombreadas; `cores_nivel` tem uma cor por nível
 marcar_janelas <- function(e, janelas, serie, cores_nivel,
                            opacidades = rep(0.2, length(cores_nivel)),
@@ -200,8 +147,7 @@ marcar_janelas <- function(e, janelas, serie, cores_nivel,
   e
 }
 
-# Escala de intensidade da afluência (× a referência de 15 dias)
-niveis_afluencia <- c("Moderada" = 2, "Alta" = 3, "Muito alta" = 5, "Extrema" = 10)
+# Cores da escala de intensidade da afluência (níveis em R/indicadores.R)
 # faixa (fundo) e rótulo (texto) por nível — do mais claro ao mais intenso
 cores_niveis_afluencia  <- unname(paleta[c("vanilla_custard", "golden_orange", "rusty_spice", "brown_red")])
 opac_niveis_afluencia   <- c(0.75, 0.30, 0.28, 0.35)
@@ -243,7 +189,7 @@ div(class = "grade-kpi",
     valor = fmt_num(vol, 2), unidade = "%",
     icone = "moisture",
     detalhe = paste0("Cota de <strong>", fmt_num(last_record$cota, 2), " m</strong>"),
-    comp = comparacao(vol, valor_em("volume", 7), " p.p.", "em 7 dias", 2),
+    comp = comparacao(vol, valor_em(df, "volume", last_record$data, 7), " p.p.", "em 7 dias", 2),
     tom = tom_vol
   ),
   kpi_card(
@@ -251,7 +197,7 @@ div(class = "grade-kpi",
     valor = fmt_num(afl, 0), unidade = "m³/s",
     icone = "water",
     detalhe = "Vazão de entrada no reservatório",
-    comp = comparacao(afl, valor_em("afluencia", 1), " m³/s", "vs. dia anterior", 0),
+    comp = comparacao(afl, valor_em(df, "afluencia", last_record$data, 1), " m³/s", "vs. dia anterior", 0),
     tom = tom_afl
   ),
   kpi_card(
@@ -259,7 +205,7 @@ div(class = "grade-kpi",
     valor = fmt_num(dfl, 1), unidade = "m³/s",
     icone = "box-arrow-right",
     detalhe = "Vazão liberada pela barragem",
-    comp = comparacao(dfl, valor_em("defluencia", 1), " m³/s", "vs. dia anterior", 1),
+    comp = comparacao(dfl, valor_em(df, "defluencia", last_record$data, 1), " m³/s", "vs. dia anterior", 1),
     tom = tom_dfl
   ),
   kpi_card(
@@ -387,8 +333,7 @@ df_saldo |>
 ```{r}
 #| title: "Afluência · histórico"
 
-an_afl <- anomalias_vazao(df, "afluencia", k = 3, n_ref = 15,
-                          niveis = niveis_afluencia, ref_min = 3, min_dif = 5)
+an_afl <- anomalias_afluencia(df)
 
 escala_txt <- paste(sprintf("%s ≥%s×", names(niveis_afluencia),
                             format(niveis_afluencia, decimal.mark = ",", trim = TRUE)),
@@ -414,9 +359,7 @@ an_afl$dados |>
 ```{r}
 #| title: "Defluência · histórico"
 
-# A defluência é quase constante, então um aumento de 20% já é relevante
-an_dfl <- anomalias_vazao(df, "defluencia", k = 3, n_ref = 15,
-                          niveis = c(Alta = 1.2), min_dif = 1)
+an_dfl <- anomalias_defluencia(df)
 
 an_dfl$dados |>
   e_charts(data) |>
