@@ -505,3 +505,15 @@ body {
   .apoie-bloco, .autor-bloco, .tg-intro { padding: .25rem 0; }
   .apoie-pix { padding: 1rem; }
 }
+
+// QR do Pix grande o bastante para a câmera do celular ler na tela
+.apoie-qrcode {
+  width: 260px !important;
+  height: 260px !important;
+  object-fit: contain !important;
+  padding: 10px;
+}
+.apoie-favorecido { font-size: .85rem !important; margin-bottom: .6rem !important; }
+@media (max-width: 767.98px) {
+  .apoie-qrcode { width: 240px !important; height: 240px !important; }
+}

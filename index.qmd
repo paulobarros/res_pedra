@@ -742,9 +742,10 @@ htmltools::HTML(r"---(<div class="apoie-bloco">
     <p>Por trás da plataforma, existe uma rotina contínua de coleta automática a cada hora, modelos de previsão e horas de dedicação para conferir e traduzir esses dados. Se este serviço é útil para você, <strong>sua contribuição ajuda a manter o projeto no ar, sem anúncios e em constante evolução</strong>.</p>
   </div>
   <div class="apoie-pix">
-    <img src="images/pix_qrcode.jpg" class="apoie-qrcode" alt="QR code do Pix para apoiar o projeto">
+    <img src="images/pix_qrcode_recorte.png" class="apoie-qrcode" alt="QR code do Pix para apoiar o projeto">
     <div>
       <p class="apoie-pix-titulo">Apoie via Pix</p>
+      <p class="apoie-favorecido">Favorecido: Paulo Barros de Abreu Junior · Itaú</p>
       <p>Abra o app do banco, escolha <em>Pix › Ler QR code</em>, ou copie a chave aleatória:</p>
       <code class="apoie-chave">8908ca84-84c4-40bf-afec-c046806908f8</code>
       <button type="button" class="apoie-copiar" onclick="navigator.clipboard.writeText('8908ca84-84c4-40bf-afec-c046806908f8').then(()=>{this.textContent='Chave copiada ✓';setTimeout(()=>this.textContent='Copiar chave Pix',2500)})"><i class="bi bi-clipboard"></i> Copiar chave Pix</button>
