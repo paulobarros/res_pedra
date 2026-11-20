@@ -103,8 +103,7 @@ msg <- paste0(
   "📤 Defluência: <b>", fmt_num(dfl, 1), " m³/s</b> ", linha_comp(comp_dfl, "estável vs. dia anterior"), "\n",
   "⚖️ Saldo do dia: <b>", txt_saldo, "</b>\n",
   if (length(alertas) > 0) paste0("\n", paste(alertas, collapse = "\n"), "\n") else "",
-  "\n📊 <a href=\"", URL_PAINEL, "\">Ver painel completo</a>\n",
-  "<i>Fonte: AXIA Nordeste (antiga CHESF)</i>"
+  "\n📊 Fonte: <a href=\"", URL_PAINEL, "\">Painel de Monitoramento do Reservatório da Pedra</a>"
 )
 
 # ---- Envio ----------------------------------------------------------------
