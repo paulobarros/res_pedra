@@ -31,6 +31,6 @@ jobs:
         run: |
           Rscript coleta_bacia.R --forcar
           Rscript previsao_afluencia.R --forcar
-          Rscript comunicados_axia.R
+          Rscript comunicados_axia.R  # sem cartas novas: caminho que falhou
           quarto render
           grep -c 'Afluência · 7 dias' docs/index.html

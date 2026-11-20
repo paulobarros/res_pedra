@@ -120,7 +120,7 @@ estado <- if (primeira_vez) {
 novos <- publicados |>
   filter(!slug %in% estado$slug) |>
   mutate(visto_em = agora, relevante = grepl(RELEVANTE, paste(titulo, slug), perl = TRUE),
-         enviado = ifelse(primeira_vez, "semente", ifelse(relevante, "pendente", "nao_relevante")))
+         enviado = as.character(ifelse(primeira_vez, "semente", ifelse(relevante, "pendente", "nao_relevante"))))
 
 # reenvia pendentes de execuções anteriores (ex.: Telegram fora)
 estado <- bind_rows(estado, novos)
