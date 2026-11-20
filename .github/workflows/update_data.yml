@@ -37,11 +37,12 @@ jobs:
           packages: |
             any::dplyr
             any::httr2
-            any::plotly
+            any::echarts4r
+            any::htmltools
+            any::zoo
             any::here
             any::tidyr
             any::lubridate
-            any::ggplot2
 
 
       - name: Consultar API da Chesf

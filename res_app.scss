@@ -1,10 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Poppins:wght@400;500;600;700;800&display=swap');
-
 /*-- scss:defaults --*/
 
-$font-family-sans-serif: "Poppins", sans-serif;
-$navbar-bg: #0353a4;
-$body-bg: #eef2fa;
+// Paleta e fontes provisórias — vamos refinar na etapa de cores/fontes
+$primary:      #0353a4;
+$body-bg:      #f4f6f9;
+$body-color:   #212529;
+$gray-muted:   #6c757d;
+$gray-line:    #e9ecef;
+$gray-icon:    #adb5bd;
+
+$font-family-sans-serif: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+$headings-font-family:   "Poppins", $font-family-sans-serif;
+$font-display:           "Poppins", $font-family-sans-serif;
+$font-kpi:               "Russo One", $font-display;
+
+$navbar-bg: #ffffff;
+$navbar-fg: $body-color;
+
+$card-radius: .625rem;
+$card-shadow: 0 1px 2px rgba(52, 58, 64, .06),
+              0 4px 10px -2px rgba(52, 58, 64, .06),
+              0 14px 32px -12px rgba(52, 58, 64, .12);
+
+// Tons de status (faixa no topo do card + linha de comparação)
+$tom-bom:    #1a9850;
+$tom-media:  #e6a23c;
+$tom-ruim:   #b2182b;
+$tom-neutro: #ced4da;
 
 /*-- scss:rules --*/
 
@@ -12,230 +33,263 @@ body {
   background-color: $body-bg;
 }
 
-/* Navbar */
+/* ---------- Top nav ---------- */
 .quarto-dashboard #quarto-dashboard-header .navbar {
-  background: linear-gradient(135deg, #0353a4 0%, #023e7d 100%) !important;
-  box-shadow: 0 4px 18px rgba(2, 33, 68, 0.25);
-  padding-top: 0.75rem !important;
-  padding-bottom: 0.75rem !important;
-}
+  background: #fff !important;
+  border-bottom: 1px solid $gray-line;
+  box-shadow: none;
+  padding-top: .6rem !important;
+  padding-bottom: .6rem !important;
 
-.quarto-dashboard #quarto-dashboard-header .navbar .navbar-brand-container img.navbar-logo {
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 4px;
-}
+  .navbar-brand-container img.navbar-logo {
+    border-radius: 8px;
+    max-height: 40px;
+  }
 
-.quarto-dashboard #quarto-dashboard-header .navbar .navbar-title .navbar-title-text {
-    margin-right: .4em;
-    font-size: x-large;
-    font-weight: 700;
-    letter-spacing: .3px;
-}
-
-.quarto-dashboard #quarto-dashboard-header .navbar .navbar-subtitle, .quarto-dashboard #quarto-dashboard-header .navbar .navbar-author {
-    font-size: 1.1rem;
+  .navbar-title .navbar-title-text {
+    font-family: $font-display;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: $body-color;
     margin-right: .5em;
-    opacity: .85;
+  }
+
+  .navbar-subtitle {
+    font-size: .85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: $gray-muted;
+  }
+
+  .navbar-nav .nav-link {
+    color: $gray-muted;
+    font-weight: 600;
+    font-size: .92rem;
+    border-radius: 999px;
+    padding: .35rem 1rem !important;
+    margin: 0 .15rem;
+    transition: background-color .15s ease, color .15s ease;
+
+    &:hover {
+      color: $body-color;
+      background-color: $gray-line;
+    }
+
+    &.active {
+      color: $primary;
+      background-color: rgba($primary, .09);
+    }
+  }
+
+  .navbar-toggler { border-color: $gray-line; }
 }
 
-.quarto-dashboard #quarto-dashboard-header .navbar .navbar-nav .nav-link {
-  border-radius: 6px;
-  padding: .25rem .75rem !important;
-  margin: 0 .2rem;
-  font-size: 0.95rem;
-  transition: background-color .15s ease, color .15s ease;
-}
-
-.quarto-dashboard #quarto-dashboard-header .navbar .navbar-nav .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.14);
-  color: #fff;
-}
-
-.quarto-dashboard #quarto-dashboard-header .navbar .navbar-nav .nav-link.active {
-  background-color: rgba(255, 255, 255, 0.22);
-  color: #fff;
-  font-weight: 600;
-}
-
-/* Cards + value boxes */
-.quarto-dashboard .card,
-.quarto-dashboard .valuebox {
-  border: none;
-  border-radius: 1.1rem;
-  box-shadow: 0 10px 26px -14px rgba(3, 40, 80, 0.28);
-  transition: transform .18s ease, box-shadow .18s ease;
-}
-
+/* ---------- Cards ---------- */
 .quarto-dashboard .card {
+  background: #fff;
+  border: 0;
+  border-radius: $card-radius;
+  box-shadow: $card-shadow;
   overflow: hidden;
 }
 
-.quarto-dashboard .card:hover,
-.quarto-dashboard .valuebox:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 34px -14px rgba(3, 40, 80, 0.35);
-}
-
 .quarto-dashboard .card-header {
-    background: linear-gradient(135deg, #0353a4 0%, #023e7d 100%);
-    color: #FFF;
-    font-size: 1.15rem;
-    font-weight: 600;
-    border: none;
-}
-
-/* Value box icon badge */
-.valuebox .value-box-showcase {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.valuebox .value-box-showcase i.bi {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  width: 3.25rem !important;
-  height: 3.25rem !important;
-  font-size: 1.5rem !important;
-  line-height: 1 !important;
-  background: rgba(255, 255, 255, 0.3);
-  color: #fff !important;
-  border-radius: 50%;
-}
-
-/* Card 1: Data */
-.box-data .valuebox .value-box-grid {
-  grid-template-columns: auto 1fr !important;
-  gap: 0.5rem !important;
-}
-
-.box-data .valuebox .value-box-area {
-  padding: 0.75rem 0.5rem 0.75rem 0 !important;
-}
-
-.box-data .valuebox .value-box-showcase {
-  padding-left: 0.5rem !important;
-}
-
-.box-data .valuebox .value-box-showcase i.bi {
-  width: 2.75rem !important;
-  height: 2.75rem !important;
-  font-size: 1.3rem !important;
-  background: rgba(255, 255, 255, 0.65);
-  color: #495057 !important;
-}
-
-.box-data .valuebox .value-box-value {
-  font-size: 1.70rem !important;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-/* Card 2: Volume Útil */
-.box-volume .valuebox .value-box-grid {
-  grid-template-columns: auto 1fr !important;
-  gap: 0.5rem !important;
-}
-
-.box-volume .valuebox .value-box-area {
-  padding: 0.5rem 0.5rem 0.5rem 0 !important;
-}
-
-.box-volume .valuebox .value-box-showcase {
-  padding-left: 0.5rem !important;
-}
-
-.box-volume .valuebox .value-box-value {
-  font-size: 2.5rem !important;
-  font-weight: 700 !important;
-  line-height: 1.1 !important;
-}
-
-/* Cards 3 e 4: Afluência e Defluência */
-.box-fluxo .valuebox .value-box-grid {
-  grid-template-columns: auto 1fr !important;
-  gap: 0.5rem !important;
-}
-
-.box-fluxo .valuebox .value-box-area {
-  padding: 0.5rem 0.5rem 0.5rem 0 !important;
-}
-
-.box-fluxo .valuebox .value-box-showcase {
-  padding-left: 0.5rem !important;
-}
-
-.box-fluxo .valuebox .value-box-value {
-  font-size: 3.5rem !important;
-  font-weight: 700 !important;
-  line-height: 1 !important;
-}
-
-.valuebox .value-box-title {
-    font-size: .8rem;
-    font-weight: 600;
-    letter-spacing: .2px;
-    opacity: .9;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.valuebox .value-box-value {
-  font-size: 1.55rem;
-  font-weight: 700;
-  line-height: 1.15;
-}
-
-.valuebox .value-box-subtext {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #495057;
-  margin-top: 0.25rem;
-  line-height: 1.25;
-}
-
-/* Tabset (pills) dentro dos cards de gráficos */
-.quarto-dashboard .card-header-tabs {
-  border-bottom: none;
-  background: #0353a4;
-  background: linear-gradient(135deg, #0353a4 0%, #023e7d 100%);
-  padding: .4rem .6rem 0 .6rem;
-  gap: .3rem;
-  margin: 0;
-}
-
-.quarto-dashboard .card-header-tabs .nav-link {
-  border: none;
-  border-radius: .7rem .7rem 0 0;
-  color: rgba(255, 255, 255, 0.75);
-  font-weight: 500;
-  padding: .5rem 1.1rem;
-}
-
-.quarto-dashboard .card-header-tabs .nav-link.active {
   background: #fff;
-  color: #0353a4;
+  border-bottom: 1px solid $gray-line;
+  color: $gray-muted;
+  font-size: .75rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  padding: .85rem 1.25rem;
 }
 
-/* Ajustes no Texto */
-.author-data a strong {
-  color: #333333;
-  text-decoration: none;
+.quarto-dashboard .card-body {
+  padding: 1rem 1.25rem;
 }
 
-.author-data a  {
-  text-decoration: none;
+/* Tabset: abas sublinhadas, discretas */
+.quarto-dashboard .tabset .card-header {
+  padding-bottom: 0;
 }
 
+.quarto-dashboard .card-header-tabs {
+  border-bottom: 0;
+  gap: .25rem;
+  margin: 0;
 
-/* Responsividade: No celular, volta a ficar um em cima do outro */
-@media (max-width: 768px) {
-  .author-card {
-    flex-direction: column !important;
-    text-align: center;
+  .nav-link {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: $gray-muted;
+    font-size: .85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: .35rem .75rem .65rem;
+
+    box-shadow: none !important; // o zephyr desenha o sublinhado com box-shadow
+    transition: color .15s ease;
+    &:not(.active) { border-bottom-color: transparent !important; }
+
+    &:hover { color: $body-color; }
+
+    &.active {
+      background: transparent;
+      color: $primary;
+      border-bottom-color: $primary;
+    }
   }
+}
+
+/* ---------- Linha de KPIs ---------- */
+// O dashboard envolve a célula num card; aqui ele fica "invisível"
+// e cada KPI vira o próprio card.
+.quarto-dashboard .kpi-row > .card,
+.quarto-dashboard .kpi-row .card {
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+
+  .card-body { padding: 0; overflow: visible; }
+}
+
+.grade-kpi {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  height: 100%;
+}
+
+@media (max-width: 991.98px) {
+  .grade-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 575.98px) {
+  .grade-kpi { grid-template-columns: 1fr; }
+}
+
+.kpi-card {
+  --tom: #{$tom-neutro};
+  --tom-texto: #{$gray-muted};
+
+  background: #fff;
+  border-radius: $card-radius;
+  box-shadow: inset 0 3px 0 var(--tom), $card-shadow;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  padding: 1.1rem 1.25rem 1rem;
+  min-height: 140px;
+
+  .kpi-topo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+  }
+
+  .kpi-titulo {
+    font-size: .9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: $gray-muted;
+    line-height: 1.35;
+  }
+
+  .kpi-icone {
+    flex: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: $gray-icon;
+  }
+
+  .kpi-valor {
+    font-family: $font-kpi;
+    font-weight: 400; // Russo One só tem um peso (já é bem encorpado)
+    font-size: 2.4rem;
+    line-height: 1.15;
+    color: $body-color;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+  }
+
+  .kpi-unidade {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: $gray-muted;
+    margin-left: .3rem;
+  }
+
+  .kpi-detalhe {
+    font-size: 1rem;
+    color: $gray-muted;
+    line-height: 1.35;
+  }
+
+  .kpi-comparacao {
+    margin-top: auto;
+    padding-top: .6rem;
+    border-top: 1px solid $gray-line;
+    display: flex;
+    align-items: flex-start;
+    gap: .4rem;
+    font-size: .95rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--tom-texto);
+
+    .bi { flex: none; margin-top: .05rem; }
+  }
+
+  &.kpi-tom-bom   { --tom: #{$tom-bom};   --tom-texto: #{darken($tom-bom, 8%)}; }
+  &.kpi-tom-media { --tom: #{$tom-media}; --tom-texto: #{darken($tom-media, 22%)}; }
+  &.kpi-tom-ruim  { --tom: #{$tom-ruim};  --tom-texto: #{$tom-ruim}; }
+}
+
+/* ---------- Página Sobre ---------- */
+.metadados p {
+  margin-bottom: .9rem;
+  line-height: 1.55;
+}
+
+.autor .card-body {
+  text-align: center;
+
+  img { border-radius: 50%; }
+
+  h3 {
+    font-family: $font-display;
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin: .75rem 0 .25rem;
+  }
+
+  p { color: $gray-muted; }
+
+  a {
+    color: $body-color;
+    text-decoration: none;
+    &:hover { color: $primary; }
+  }
+}
+
+/* O dashboard adiciona .html-fill-container (flex coluna) em todos os divs
+   da célula; aqui devolvemos o layout pensado para o card de KPI. */
+.grade-kpi.html-fill-container { display: grid; }
+.kpi-card {
+  .kpi-topo.html-fill-container,
+  .kpi-comparacao.html-fill-container { display: flex; flex-direction: row; }
+  .kpi-valor.html-fill-container,
+  .kpi-detalhe.html-fill-container,
+  .kpi-titulo.html-fill-container,
+  .kpi-icone.html-fill-container { display: block; flex: none; }
+}
+
+@media (max-width: 575.98px) {
+  .quarto-dashboard #quarto-dashboard-header .navbar .navbar-subtitle { display: none; }
 }

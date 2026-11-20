@@ -1,23 +1,23 @@
 ---
-title: "Reservatório da Pedra (AXIA Nordeste)"
-subtitle: " | Estatísticas de Monitoramento"
-format: 
+title: "Reservatório da Pedra"
+subtitle: "Monitoramento AXIA Nordeste"
+format:
   dashboard:
     logo: images/logo.png
     include-in-header:
       text: |
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-        <style>
-          /* Força a fonte Barlow Condensed nos componentes plotly (eixos/ticks) */
-          .js-plotly-plot .plot-container .svg-container text {
-            font-family: 'Barlow Condensed', sans-serif !important;
-          }
-        </style>
+        <script>
+          // Gráficos em abas ocultas nascem com largura 0; ao exibir a aba,
+          // dispara um resize para o echarts recalcular o tamanho.
+          document.addEventListener("shown.bs.tab", function () {
+            window.dispatchEvent(new Event("resize"));
+          });
+        </script>
+        <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@400;500;600&family=Russo+One&display=swap" rel="stylesheet">
     orientation: rows
-    theme: [zephyr,res_app.scss]
+    theme: [zephyr, res_app.scss]
 ---
 
 ```{r}
@@ -25,255 +25,450 @@ format:
 #| message: false
 library(dplyr)
 library(tidyr)
-library(plotly)
-library(scales) # Necessário para formatar as datas nos eixos
-library(htmltools)
-library(ggplot2)
 library(lubridate)
-
-
+library(htmltools)
+library(echarts4r)
 
 df <- read.csv("data/pedra_dados.csv") |>
-  mutate(data = as.Date(data)
+  mutate(data = as.Date(data)) |>
+  arrange(desc(data))
 
-  )
+# Último dia com pelo menos uma medição
+last_record <- df |>
+  filter(if_any(c(cota, afluencia, defluencia, volume), ~ !is.na(.x))) |>
+  slice(1)
 
+# Paleta dos gráficos
+paleta <- c(
+  ink_black       = "#001219",
+  dark_teal       = "#005f73",
+  dark_cyan       = "#0a9396",
+  pearl_aqua      = "#94d2bd",
+  vanilla_custard = "#e9d8a6",
+  golden_orange   = "#ee9b00",
+  burnt_caramel   = "#ca6702",
+  rusty_spice     = "#bb3e03",
+  oxidized_iron   = "#ae2012",
+  brown_red       = "#9b2226"
+)
 
+cores <- list(
+  volume     = paleta[["dark_cyan"]],
+  volume_mm5 = paleta[["dark_teal"]],
+  entrada    = paleta[["dark_cyan"]],
+  saida      = paleta[["golden_orange"]],
+  defluencia = paleta[["burnt_caramel"]],
+  texto      = "#212529",
+  muted      = "#495057",
+  grade      = "#e9ecef"
+)
+fonte <- "Atkinson Hyperlegible Next, system-ui, sans-serif"
+fs_eixo <- 14     # tamanho dos rótulos de eixo
+fs_legenda <- 15  # tamanho da legenda e do tooltip
 
-last_record <- df |> 
-  filter(!rowSums(is.na(across(everything())))==4) |>
-  slice(1) |>
-  mutate(across(afluencia:volume, ~ if_else(is.na(.x),"Sem Dados", as.character(.x))))
+# Ícones (Bootstrap Icons) para legendas
+icone_entrada <- "path://M6 3.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 0-1 0v2A1.5 1.5 0 0 0 6.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-8A1.5 1.5 0 0 0 5 3.5v2a.5.5 0 0 0 1 0v-2zM11.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H1.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"
+icone_saida <- "path://M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2zM15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"
+icone_enchendo <- "path://M16 8A8 8 0 1 0 0 8a8 8 0 0 0 16 0zm-7.5 3.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V11.5z"
+icone_esvaziando <- "path://M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v5.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V4.5z"
 
-last_date  <- paste0("Volume Total Reservatório em ",format(as.Date(last_record$data), format ='%d/%m/%Y'))
+# ---- Helpers --------------------------------------------------------------
 
-estilo_plotly <- function(p) {
-  p |> layout(
-    font = list(family = "Roboto, sans-serif"),
-    xaxis = list(
-      tickfont = list(family = "Barlow Condensed, sans-serif", size = 18),
-      title = list(font = list(size = 18))
+fmt_num <- function(x, dig = 1) {
+  if (is.na(x)) return("—")
+  format(round(x, dig), nsmall = dig, decimal.mark = ",", big.mark = ".")
+}
+
+valor_em <- function(col, dias_atras) {
+  alvo <- last_record$data - dias_atras
+  v <- df[[col]][df$data == alvo]
+  if (length(v) == 0) NA_real_ else v[1]
+}
+
+# Linha de comparação com seta (up/down/dash)
+comparacao <- function(atual, anterior, unidade, rotulo, dig = 1) {
+  if (is.na(atual) || is.na(anterior)) {
+    return(list(icone = "dash-circle", texto = paste("Sem dado para", rotulo)))
+  }
+  d <- atual - anterior
+  icone <- if (abs(d) < 10^-dig) "dash-circle" else if (d > 0) "arrow-up-circle" else "arrow-down-circle"
+  sinal <- if (d > 0) "+" else if (d < 0) "−" else ""
+  list(icone = icone, texto = paste0(sinal, fmt_num(abs(d), dig), unidade, " ", rotulo))
+}
+
+# Card de KPI no estilo "grade de cards"
+# tom: "bom" | "media" | "ruim" | "neutro"
+kpi_card <- function(titulo, valor, unidade = NULL, icone, detalhe = NULL,
+                     comp = NULL, tom = "neutro") {
+  div(class = paste0("kpi-card kpi-tom-", tom),
+    div(class = "kpi-topo",
+      div(class = "kpi-titulo", titulo),
+      div(class = "kpi-icone", tags$i(class = paste0("bi bi-", icone)))
     ),
-    yaxis = list(
-      tickfont = list(family = "Barlow Condensed, sans-serif", size = 18),
-      title = list(font = list(size = 18))
-    )
+    div(class = "kpi-valor", valor,
+        if (!is.null(unidade)) span(class = "kpi-unidade", unidade)),
+    if (!is.null(detalhe)) div(class = "kpi-detalhe", HTML(detalhe)),
+    if (!is.null(comp)) div(class = "kpi-comparacao",
+      tags$i(class = paste0("bi bi-", comp$icone)), span(comp$texto))
   )
 }
 
+# Estilo padrão dos gráficos echarts
+estilo_ec <- function(e, grid_bottom = 70, grid_top = 40) {
+  e |>
+    e_text_style(fontFamily = fonte, color = cores$muted, fontSize = fs_eixo) |>
+    e_grid(left = 60, right = 24, top = grid_top, bottom = grid_bottom) |>
+    e_tooltip(
+      trigger = "axis",
+      backgroundColor = "#ffffff",
+      borderColor = cores$grade,
+      textStyle = list(fontFamily = fonte, color = cores$texto, fontSize = fs_legenda)
+    ) |>
+    e_x_axis(
+      axisLine = list(lineStyle = list(color = cores$grade)),
+      axisTick = list(show = FALSE),
+      axisLabel = list(color = cores$muted, fontSize = fs_eixo)
+    ) |>
+    e_y_axis(
+      splitLine = list(lineStyle = list(color = cores$grade, type = "dashed")),
+      axisLabel = list(color = cores$muted, fontSize = fs_eixo)
+    ) |>
+    e_legend(bottom = 0, itemWidth = 22, itemHeight = 14, itemGap = 24,
+             textStyle = list(color = cores$texto, fontSize = fs_legenda)) |>
+    e_toolbox_feature("saveAsImage", title = "Salvar") |>
+    e_locale("PT-br")
+}
+
+# ---- Janelas de anomalia (aumento de vazão) --------------------------------
+# Para cada dia t: compara a média dos últimos `k` dias (t-k+1 .. t) com uma
+# referência = média dos `n_ref` dias imediatamente anteriores à janela.
+#
+# intensidade = média da janela ÷ max(referência, ref_min)
+#   - `ref_min` evita que a razão "exploda" quando a referência está perto de
+#     zero (estiagem): 9 m³/s contra 0,5 m³/s não é 18× na prática.
+#   - `min_dif` exige um aumento absoluto mínimo (m³/s) para marcar.
+# `niveis` são os limiares da escala (nome = rótulo, valor = "× a referência").
+# Janelas que se sobrepõem viram um intervalo só, com o nível mais alto.
+anomalias_vazao <- function(dados, col, k = 3, n_ref = 15, niveis = c(Alta = 2),
+                            ref_min = 0, min_dif = 5) {
+  niveis <- sort(niveis)
+  d <- dados |>
+    filter(!is.na(.data[[col]])) |>
+    arrange(data)
+  x <- d[[col]]
+  media_k <- zoo::rollapplyr(x, k, mean, fill = NA)
+  ref <- dplyr::lag(zoo::rollapplyr(x, n_ref, mean, fill = NA), k)
+  razao <- media_k / pmax(ref, ref_min)
+  nivel <- findInterval(razao, niveis)          # 0 = normal, 1.. = índice do nível
+  nivel[is.na(ref) | is.na(razao) | (media_k - ref) < min_dif] <- 0
+
+  d <- d |> mutate(referencia = round(ref, 1), nivel = nivel)
+
+  idx <- which(nivel > 0)
+  janelas <- tibble(inicio = d$data[pmax(idx - k + 1, 1)], fim = d$data[idx], nivel = nivel[idx])
+  if (nrow(janelas) > 1) {
+    janelas <- janelas |>
+      arrange(inicio) |>
+      mutate(grupo = cumsum(as.numeric(inicio) > lag(cummax(as.numeric(fim)), default = -Inf) + 1)) |>
+      summarise(inicio = min(inicio), fim = max(fim), nivel = max(nivel), .by = grupo) |>
+      select(-grupo)
+  }
+  janelas <- janelas |> mutate(rotulo = names(niveis)[nivel])
+  list(dados = d, janelas = janelas, niveis = niveis)
+}
+
+# Pinta as janelas como faixas sombreadas; `cores_nivel` tem uma cor por nível
+marcar_janelas <- function(e, janelas, serie, cores_nivel,
+                           opacidades = rep(0.2, length(cores_nivel)),
+                           cores_rotulo = cores_nivel) {
+  for (i in seq_len(nrow(janelas))) {
+    n <- janelas$nivel[i]
+    # estilo vai dentro do item: no echarts, o estilo no nível do markArea
+    # vale para todas as faixas da série
+    e <- e |> e_mark_area(
+      serie = serie,
+      data = list(
+        list(xAxis = format(janelas$inicio[i]), name = janelas$rotulo[i],
+             itemStyle = list(color = cores_nivel[n], opacity = opacidades[n]),
+             label = list(show = TRUE, position = "insideTop", color = cores_rotulo[n],
+                          fontWeight = "bold", fontSize = 12)),
+        list(xAxis = format(janelas$fim[i]))
+      ),
+      emphasis = list(disabled = TRUE)
+    )
+  }
+  e
+}
+
+# Escala de intensidade da afluência (× a referência de 15 dias)
+niveis_afluencia <- c("Moderada" = 2, "Alta" = 3, "Muito alta" = 5, "Extrema" = 10)
+# faixa (fundo) e rótulo (texto) por nível — do mais claro ao mais intenso
+cores_niveis_afluencia  <- unname(paleta[c("vanilla_custard", "golden_orange", "rusty_spice", "brown_red")])
+opac_niveis_afluencia   <- c(0.75, 0.30, 0.28, 0.35)
+rotulo_niveis_afluencia <- unname(paleta[c("golden_orange", "burnt_caramel", "rusty_spice", "brown_red")])
+
+nota_anomalia <- function(e, texto) {
+  e |> e_title(subtext = texto, left = 10, top = 0,
+               subtextStyle = list(fontSize = 13, color = cores$muted, fontFamily = fonte))
+}
+
+# Rótulos de data em pt-BR (dd/mm) no eixo x temporal
+eixo_data <- function(e) {
+  e |> e_x_axis(axisLabel = list(
+    formatter = htmlwidgets::JS("function(v){var d=new Date(v);return ('0'+d.getUTCDate()).slice(-2)+'/'+('0'+(d.getUTCMonth()+1)).slice(-2);}"),
+    color = cores$muted, fontSize = fs_eixo, hideOverlap = TRUE
+  ))
+}
 ```
 
-# Estatísticas
+# Painel
 
-## Row {title="Estatísticas" height="30%"}
-
-### Column {.box-data}
+## Row {.kpi-row height="26%"}
 
 ```{r}
-#| results: asis
-#| echo: false
+#| expandable: false
 
-data_obs <- format(as.Date(last_record$data), format = '%d/%m/%Y')
-hora_atualizacao <- format(with_tz(Sys.time(), "America/Bahia"), "%d/%m/%Y - %H:%M")
+vol <- last_record$volume
+afl <- last_record$afluencia
+dfl <- last_record$defluencia
+hora_atualizacao <- format(with_tz(Sys.time(), "America/Bahia"), "%d/%m/%Y às %H:%M")
 
-cat(sprintf('
-::: {.valuebox icon="calendar-check-fill" color="#ced4da" title="Última Data AXIA Nordeste"}
-%s
+tom_vol <- case_when(is.na(vol) ~ "neutro", vol < 20 ~ "ruim", vol < 40 ~ "media", TRUE ~ "bom")
+tom_afl <- case_when(is.na(afl) ~ "neutro", afl >= 100 ~ "media", TRUE ~ "neutro")
+tom_dfl <- case_when(is.na(dfl) ~ "neutro", dfl >= 10 ~ "media", TRUE ~ "bom")
 
-<span class="value-box-subtext">Última Atualização: %s</span>
-:::
-', data_obs, hora_atualizacao))
-```
-
-
-### Column {.box-volume}
-
-```{r}
-#| content: valuebox
-#| title: Volume Útil (%) 
-
-list(
-  icon = "moisture",
-  color = ifelse(last_record$volume < 20, "danger", "primary"),
-  value = paste0(last_record$volume, if_else(last_record$volume == "Sem Dados", "", "%"))
+div(class = "grade-kpi",
+  kpi_card(
+    titulo = "Volume útil",
+    valor = fmt_num(vol, 2), unidade = "%",
+    icone = "moisture",
+    detalhe = paste0("Cota de <strong>", fmt_num(last_record$cota, 2), " m</strong>"),
+    comp = comparacao(vol, valor_em("volume", 7), " p.p.", "em 7 dias", 2),
+    tom = tom_vol
+  ),
+  kpi_card(
+    titulo = "Afluência",
+    valor = fmt_num(afl, 0), unidade = "m³/s",
+    icone = "water",
+    detalhe = "Vazão de entrada no reservatório",
+    comp = comparacao(afl, valor_em("afluencia", 1), " m³/s", "vs. dia anterior", 0),
+    tom = tom_afl
+  ),
+  kpi_card(
+    titulo = "Defluência",
+    valor = fmt_num(dfl, 1), unidade = "m³/s",
+    icone = "box-arrow-right",
+    detalhe = "Vazão liberada pela barragem",
+    comp = comparacao(dfl, valor_em("defluencia", 1), " m³/s", "vs. dia anterior", 1),
+    tom = tom_dfl
+  ),
+  kpi_card(
+    titulo = "Último boletim",
+    valor = format(last_record$data, "%d/%m/%Y"),
+    icone = "calendar-check",
+    detalhe = "Dados publicados pela AXIA Nordeste",
+    comp = list(icone = "arrow-repeat", texto = paste("Consultado em", hora_atualizacao)),
+    tom = "neutro"
+  )
 )
 ```
 
-### Column {.box-fluxo}
-
-```{r}
-#| content: valuebox
-#| title: Afluência (m³/s)
-
-list(
-  icon = "water",
-  color = ifelse(last_record$afluencia >= 100, "#ffcb69", "#a9d6e5"),
-  value = last_record$afluencia
-)
-```
-
-### Column {.box-fluxo}
-
-```{r}
-#| content: valuebox
-#| title: Defluência (m³/s)
-
-list(
-  icon = "box-arrow-right",
-  color = ifelse(last_record$defluencia < 10, "#95d5b2", "#f18701"),
-  value = last_record$defluencia
-)
-```
-
-
-## Row {height="70%"}
+## Row {height="74%"}
 
 ### Column {width=50% .tabset}
 
 ```{r}
-#| title: "Média Móvel (5 dias)"
+#| title: "Volume · MM5"
 
 df_vol <- df |>
   filter(!is.na(volume)) |>
   arrange(data) |>
-  mutate(volume_ma5 = as.numeric(stats::filter(volume, rep(1 / 5, 5), sides = 1)))
+  mutate(volume_ma5 = round(as.numeric(stats::filter(volume, rep(1 / 5, 5), sides = 1)), 2))
 
-p_ma5 <- ggplot(df_vol, aes(x = data, y = volume_ma5)) +
-  geom_line(color = "#0353a4", linewidth = 1.2) +
-  scale_x_date(date_labels = "%d/%m", date_breaks = "1 week") +
-  theme_minimal() +
-  labs(x = "Dia/Mês", y = "Volume (%) - Média 5 dias") +
-  theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
-
-ggplotly(p_ma5) |> estilo_plotly()
+df_vol |>
+  e_charts(data) |>
+  e_line(volume_ma5, name = "Volume (MM5)", smooth = TRUE, symbol = "none",
+         lineStyle = list(width = 3),
+         areaStyle = list(opacity = 0.12)) |>
+  e_color(cores$volume_mm5) |>
+  e_y_axis(scale = TRUE) |>
+  estilo_ec() |>
+  eixo_data() |>
+  e_datazoom(type = "inside")
 ```
 
 ```{r}
-#| title: "Série Completa"
+#| title: "Volume · histórico"
 
-p_full <- ggplot(df_vol, aes(x = data, y = volume)) +
-  geom_line(color = "#2c3e50", linewidth = 1) +
-  scale_x_date(date_labels = "%d/%m", date_breaks = "1 week") +
-  theme_minimal() +
-  labs(x = "Dia/Mês", y = "Volume (%)") +
-  theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
-
-ggplotly(p_full) |> estilo_plotly()
+df_vol |>
+  e_charts(data) |>
+  e_line(volume, name = "Volume útil (%)", symbol = "none",
+         lineStyle = list(width = 2),
+         areaStyle = list(opacity = 0.12)) |>
+  e_color(cores$volume) |>
+  e_y_axis(scale = TRUE) |>
+  estilo_ec(grid_bottom = 110) |>
+  eixo_data() |>
+  e_datazoom(type = "slider", height = 22, bottom = 40)
 ```
 
 ```{r}
-#| title: "Média Mensal"
+#| title: "Volume · mensal"
 
-df_mensal <- df_vol |>
+df_vol |>
   mutate(mes = floor_date(data, "month")) |>
   summarise(volume_medio = round(mean(volume, na.rm = TRUE), 1), .by = mes) |>
-  mutate(label_text = paste0(round(volume_medio, 1), "%"))
-
-p_mensal <- ggplot(df_mensal, aes(x = mes, y = volume_medio)) +
-  geom_col(fill = "#0353a4", width = 20) +
-  geom_text(
-    aes(y = volume_medio / 2, label = label_text),
-    color = "#ffffff",
-    fontface = "bold",
-    size = 6.5
-  ) +
-  scale_x_date(date_labels = "%b/%Y", date_breaks = "1 month") +
-  theme_minimal() +
-  labs(x = "Mês", y = "Volume Médio (%)") +
-  theme(axis.text.x = element_text(family = "Barlow Condensed Bold"))
-
-p_ply_mensal <- ggplotly(p_mensal, tooltip = c("x", "y"))
-if (length(p_ply_mensal$x$data) >= 2) {
-  p_ply_mensal$x$data[[2]]$hoverinfo <- "none"
-}
-p_ply_mensal |> estilo_plotly()
+  arrange(mes) |>
+  mutate(mes = paste0(c("jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez")[month(mes)], "/", format(mes, "%y"))) |>
+  e_charts(mes) |>
+  e_bar(volume_medio, name = "Volume médio (%)", barMaxWidth = 48,
+        itemStyle = list(borderRadius = c(6, 6, 0, 0)),
+        label = list(show = TRUE, position = "insideTop", color = "#fff",
+                     formatter = htmlwidgets::JS("function(p){var v=Array.isArray(p.value)?p.value[1]:p.value;return Number(v).toFixed(1).replace('.', ',');}"),
+                     fontWeight = "bold", fontFamily = fonte, fontSize = fs_legenda)) |>
+  e_color(cores$volume) |>
+  estilo_ec()
 ```
-
-
-
-
 
 ### Column {width=50% .tabset}
 
 ```{r}
-#| title: "Últimos 10 dias"
+#| title: "Saldo · 10 dias"
 
-df_p2 <- df |>
-  filter(!is.na(afluencia)) |>
-  mutate(across(-data, ~if_else(is.na(.x), 0, .x))) |>
-  head(10) |>
-  pivot_longer(cols = c(afluencia, defluencia), names_to = "fluxo", values_to = "vazao") |>
-  mutate(fluxo = factor(if_else(fluxo == "afluencia", "Entrada", "Saída"), levels = c("Entrada", "Saída")))
+# Saldo diário = entrada − saída. Positivo: o reservatório está ganhando água;
+# negativo: está perdendo. Entrada e saída aparecem no tooltip.
+df_saldo <- df |>
+  filter(!is.na(afluencia), !is.na(defluencia)) |>
+  slice_head(n = 10) |>
+  arrange(data) |>
+  mutate(
+    dia = format(data, "%d/%m"),
+    saldo = round(afluencia - defluencia, 1),
+    enchendo = if_else(saldo >= 0, saldo, NA_real_),
+    esvaziando = if_else(saldo < 0, saldo, NA_real_)
+  )
 
-p2 <- ggplot(df_p2, aes(x = data, y = vazao, fill = fluxo)) +
-  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
-  scale_x_date(date_labels = "%d/%m", date_breaks = "1 day") +
-  scale_fill_manual(values = c("Entrada" = "#0077b6", "Saída" = "#90e0ef")) +
-  theme_minimal() +
-  labs(x = "Dia/Mês", y = "Vazão (m³/s)", fill = "Fluxo") +
-  theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
+tooltip_saldo <- htmlwidgets::JS(sprintf("
+function (params) {
+  var ent = %s, sai = %s, sal = %s;
+  var i = params[0].dataIndex;
+  var f = function (v) { return Number(v).toLocaleString('pt-BR', {maximumFractionDigits: 1}); };
+  var cor = sal[i] >= 0 ? '%s' : '%s';
+  return '<b>' + params[0].axisValue + '</b><br>' +
+    'Entrada: <b>' + f(ent[i]) + ' m³/s</b><br>' +
+    'Saída: <b>' + f(sai[i]) + ' m³/s</b><br>' +
+    'Saldo: <b style=\"color:' + cor + '\">' + (sal[i] > 0 ? '+' : '') + f(sal[i]) + ' m³/s</b>';
+}",
+  jsonlite::toJSON(df_saldo$afluencia), jsonlite::toJSON(df_saldo$defluencia),
+  jsonlite::toJSON(df_saldo$saldo), cores$entrada, cores$defluencia))
 
-ggplotly(p2, tooltip = c("x", "y", "fill")) |> estilo_plotly()
+rotulo_saldo <- htmlwidgets::JS("function (p) { var v = Array.isArray(p.value) ? p.value[1] : p.value; return (v > 0 ? '+' : '') + Number(v).toLocaleString('pt-BR', {maximumFractionDigits: 1}); }")
+
+df_saldo |>
+  e_charts(dia) |>
+  e_bar(enchendo, name = "Enchendo", stack = "saldo", barMaxWidth = 44,
+        itemStyle = list(borderRadius = c(5, 5, 0, 0)),
+        label = list(show = TRUE, position = "top", formatter = rotulo_saldo,
+                     color = cores$texto, fontWeight = "bold", fontSize = fs_eixo)) |>
+  e_bar(esvaziando, name = "Esvaziando", stack = "saldo", barMaxWidth = 44,
+        itemStyle = list(borderRadius = c(0, 0, 5, 5)),
+        label = list(show = TRUE, position = "bottom", formatter = rotulo_saldo,
+                     color = cores$texto, fontWeight = "bold", fontSize = fs_eixo)) |>
+  e_color(c(cores$entrada, cores$defluencia)) |>
+  estilo_ec() |>
+  e_y_axis(name = "m³/s", nameTextStyle = list(fontSize = fs_eixo)) |>
+  e_tooltip(trigger = "axis", formatter = tooltip_saldo,
+            backgroundColor = "#ffffff", borderColor = cores$grade,
+            textStyle = list(fontFamily = fonte, color = cores$texto, fontSize = fs_legenda)) |>
+  e_legend(icons = c(icone_enchendo, icone_esvaziando),
+           itemWidth = 22, itemHeight = 22, itemGap = 32)
 ```
 
 ```{r}
-#| title: "Série Completa"
+#| title: "Afluência · histórico"
 
-df_def <- df |>
-  filter(!is.na(defluencia)) |>
-  arrange(data)
+an_afl <- anomalias_vazao(df, "afluencia", k = 3, n_ref = 15,
+                          niveis = niveis_afluencia, ref_min = 3, min_dif = 5)
 
-p_def <- ggplot(df_def, aes(x = data, y = defluencia)) +
-  geom_line(color = "#f18701", linewidth = 1) +
-  scale_x_date(date_labels = "%d/%m", date_breaks = "1 week") +
-  theme_minimal() +
-  labs(x = "Dia/Mês", y = "Defluência (m³/s)") +
-  theme(axis.text.x = element_text(angle = 45, family = "Barlow Condensed Bold"))
+escala_txt <- paste(sprintf("%s ≥%s×", names(niveis_afluencia),
+                            format(niveis_afluencia, decimal.mark = ",", trim = TRUE)),
+                    collapse = " · ")
 
-ggplotly(p_def) |> estilo_plotly()
+an_afl$dados |>
+  e_charts(data) |>
+  e_line(afluencia, name = "Afluência (m³/s)", symbol = "none",
+         lineStyle = list(width = 2),
+         areaStyle = list(opacity = 0.12)) |>
+  e_line(referencia, name = "Referência (média 15 dias)", symbol = "none",
+         lineStyle = list(width = 1.5, type = "dashed")) |>
+  marcar_janelas(an_afl$janelas, "Afluência (m³/s)",
+                 cores_niveis_afluencia, opac_niveis_afluencia,
+                 rotulo_niveis_afluencia) |>
+  e_color(c(cores$entrada, cores$muted)) |>
+  estilo_ec(grid_bottom = 110, grid_top = 60) |>
+  eixo_data() |>
+  nota_anomalia(paste0("Média de 3 dias vs. referência: ", escala_txt)) |>
+  e_datazoom(type = "slider", height = 22, bottom = 40)
+```
+
+```{r}
+#| title: "Defluência · histórico"
+
+# A defluência é quase constante, então um aumento de 20% já é relevante
+an_dfl <- anomalias_vazao(df, "defluencia", k = 3, n_ref = 15,
+                          niveis = c(Alta = 1.2), min_dif = 1)
+
+an_dfl$dados |>
+  e_charts(data) |>
+  e_line(defluencia, name = "Defluência (m³/s)", symbol = "none", step = "end",
+         lineStyle = list(width = 2)) |>
+  e_line(referencia, name = "Referência (média 15 dias)", symbol = "none",
+         lineStyle = list(width = 1.5, type = "dashed")) |>
+  marcar_janelas(an_dfl$janelas, "Defluência (m³/s)", paleta[["oxidized_iron"]]) |>
+  e_color(c(cores$defluencia, cores$muted)) |>
+  estilo_ec(grid_bottom = 110, grid_top = 60) |>
+  eixo_data() |>
+  nota_anomalia(if (nrow(an_dfl$janelas) == 0)
+    "Nenhuma janela de aumento: média de 3 dias nunca passou de 1,2× a referência"
+    else sprintf("Faixas: %d janelas com média de 3 dias ≥ 1,2× a referência", nrow(an_dfl$janelas))) |>
+  e_datazoom(type = "slider", height = 22, bottom = 40)
 ```
 
 # Sobre
 
+## Row
 
-### Column {width="50%"}
+### Column {width="60%"}
 
-::: {.card .metadados title="Metadados"}
+::: {.card .metadados title="Glossário"}
 
+**Cota (m)** — Altitude da superfície da água em relação ao nível do mar. Indica o quanto o nível do reservatório subiu ou desceu fisicamente.
 
-**Cota ($m$):** É a altitude da superfície da água em relação ao nível do mar. É a medida vertical que indica o quanto o nível do reservatório subiu ou desceu fisicamente.
+**Afluência (m³/s)** — Vazão de entrada. Toda a água que chega ao reservatório, vinda das chuvas na cabeceira e dos rios que deságuam nele.
 
-**Afluência ($m^3/s$):** É a vazão de entrada. Representa toda a água que está chegando ao reservatório, vinda das chuvas na cabeceira e dos rios que deságuam nele.
+**Defluência (m³/s)** — Vazão de saída. Quantidade de água que a concessionária (AXIA Nordeste, antiga CHESF) libera pelas turbinas ou vertedouros para o leito do rio abaixo da barragem.
 
-**Defluência ($m^3/s$):** É a vazão de saída. É a quantidade de água que a concessionária (AXIA Nordeste, antiga CHESF) está liberando pelas turbinas ou vertedouros para o leito do rio abaixo da barragem.
-
-**Volume Útil (%):** É o indicador mais importante. Representa a porcentagem de água disponível acima do "Volume Morto" (nível mínimo para operação). É o que define se estamos em situação de seca ou de controle de cheia.
+**Volume útil (%)** — O indicador mais importante. Porcentagem de água disponível acima do "volume morto" (nível mínimo para operação). Define se estamos em situação de seca ou de controle de cheia.
 
 :::
 
-:::{.card title="Desenvolvido por:" }
+::: {.card title="Fonte de dados"}
 
-![](images/AvatarPB-Yellow.png){width=250px fig-align="center"}
+Dados do [sistema de gestão de recursos hídricos da AXIA Nordeste](https://axia.com.br/axia-nordeste-gestao-de-recursos-hidricos){target="_blank"} (antiga CHESF), consultados automaticamente via API.
 
-<h2>Paulo Barros</h2>
+:::
 
-Biólogo e Cientista de Dados  
+### Column {width="40%"}
 
+::: {.card .autor title="Desenvolvido por"}
+
+![](images/AvatarPB-Yellow.png){width=180px fig-align="center"}
+
+<h3>Paulo Barros</h3>
+
+Biólogo e Cientista de Dados
 Mestre em Genética, Biodiversidade e Conservação
 
-[<span style="color:#333333;">{{< fa brands instagram size=2xl >}}</span> **\@pbarros.dados**](https://instagram.com/pbarros.dados){target="_blank"}
-
-
+[{{< fa brands instagram >}} **\@pbarros.dados**](https://instagram.com/pbarros.dados){target="_blank"}
 
 :::
-
-
-
-## {height="20%"}
-
-:::{.card title="Fonte de Dados:"}
-
-Dados provenientes do [sistema de gestão de recursos hídricos da AXIA Nordeste](https://axia.com.br/axia-nordeste-gestao-de-recursos-hidricos){target="_blank"} (antiga CHESF desde 2025).
-
-:::
-
