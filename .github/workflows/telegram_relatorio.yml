@@ -1,0 +1,43 @@
+name: Relatório diário no Telegram
+on:
+  schedule:
+    # 10:00 UTC = 07:00 na Bahia. A action de dados roda no minuto 7 de cada
+    # hora, então às 10:00 o CSV já tem a consulta das 09:07.
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Só mostrar a mensagem no log, sem enviar ao canal'
+        type: boolean
+        default: false
+
+concurrency:
+  group: telegram-relatorio
+  cancel-in-progress: false
+
+jobs:
+  enviar-relatorio:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configurar R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Instalar dependências com Cache
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          cache: true
+          packages: |
+            any::dplyr
+            any::httr2
+            any::lubridate
+            any::zoo
+
+      - name: Enviar relatório ao canal
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: Rscript telegram_relatorio.R
