@@ -97,7 +97,9 @@ etapa("Previsão de chuva (Open-Meteo ensemble)", {
 # ---- 3. Chuva observada (MERGE) --------------------------------------------
 etapa("Chuva observada na bacia (MERGE/CPTEC)", {
   antigo <- if (file.exists(ARQ_MERGE)) read.csv(ARQ_MERGE) |> mutate(data = as.Date(data)) else NULL
-  faltando <- setdiff(seq(INICIO_SERIE, hoje, by = 1), antigo$data) |> as.Date()
+  # o CPTEC reprocessa os arquivos mais recentes (o de hoje muda ao longo do
+  # dia), então os 2 últimos dias são sempre baixados de novo
+  faltando <- setdiff(seq(INICIO_SERIE, hoje, by = 1), antigo$data[antigo$data < hoje - 1]) |> as.Date()
   faltando <- head(sort(faltando, decreasing = TRUE), MAX_MERGE_POR_RODADA)  # mais recentes primeiro
 
   if (length(faltando) == 0) {
@@ -107,8 +109,8 @@ etapa("Chuva observada na bacia (MERGE/CPTEC)", {
     novos <- bind_rows(lapply(faltando, \(d) suppressWarnings(chuva_merge_bacia(d, bacia))))
     message("  dias novos: ", nrow(novos), " de ", length(faltando), " tentados")
     if (nrow(novos) > 0) {
-      bind_rows(antigo, novos) |>
-        distinct(data, .keep_all = TRUE) |>
+      bind_rows(novos, antigo) |>
+        distinct(data, .keep_all = TRUE) |>   # mantém a versão nova
         arrange(data) |>
         write.csv(ARQ_MERGE, row.names = FALSE)
     }
