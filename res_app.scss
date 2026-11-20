@@ -347,88 +347,161 @@ body {
 }
 .fontes .card-body p { margin-bottom: .7rem; line-height: 1.45; font-size: .95rem; }
 
-/* ---------- Sobre: autor + apoio ---------- */
-.apoie .card-body { overflow: auto; }
-
-.apoie-grade {
-  display: grid;
-  grid-template-columns: 1.1fr 1.2fr 1.1fr;
-  gap: 1.75rem;
+/* ---------- Apoie o projeto ---------- */
+.autor-bloco {
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   height: 100%;
-  padding: .5rem 1.25rem;
+  padding: 1rem 1.5rem;
 
-  p { margin-bottom: .6rem; line-height: 1.5; }
-  a { color: $body-color; text-decoration: none; &:hover { color: $primary; } }
+  h3 { font-family: $font-display; font-size: 1.6rem; font-weight: 600; margin: 1.1rem 0 .4rem; }
+  p { color: $gray-muted; font-size: 1rem; line-height: 1.5; max-width: 30ch; }
 }
 
-.apoie-autor {
+.autor-links {
   display: flex;
-  gap: 1rem;
-  align-items: center;
-
-  h3 { font-family: $font-display; font-size: 1.35rem; font-weight: 600; margin: 0 0 .3rem; }
-  p { color: $gray-muted; font-size: .95rem; }
+  gap: 1.25rem;
+  justify-content: center;
+  a { color: $body-color; font-weight: 600; text-decoration: none; &:hover { color: $primary; } }
+  .bi { margin-right: .25rem; }
 }
 
 .apoie-foto {
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 180px;
   border-radius: 50%;
   object-fit: cover;
-  flex: none;
   box-shadow: $card-shadow;
 }
 
+.apoie-bloco {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.75rem;
+  height: 100%;
+  padding: 1rem 1.75rem;
+}
+
+.apoie-texto p { font-size: 1.05rem; line-height: 1.6; margin-bottom: .9rem; }
+
 .apoie-pix {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
   align-items: center;
+  background: $body-bg;
+  border-radius: $card-radius;
+  padding: 1.1rem 1.25rem;
 
-  p { font-size: .9rem; color: $gray-muted; }
+  p { font-size: .95rem; color: $gray-muted; margin-bottom: .5rem; }
 }
 
 .apoie-qrcode {
-  width: 150px;
-  height: 150px;
+  width: 170px;
+  height: 170px;
   object-fit: cover;
   object-position: 50% 32%;   // corta as margens brancas da imagem
   flex: none;
   border-radius: .5rem;
-  border: 1px solid $gray-line;
+  background: #fff;
 }
 
 .apoie-pix-titulo {
   font-family: $font-display;
   font-weight: 600;
   color: $body-color !important;
-  font-size: 1.05rem !important;
+  font-size: 1.15rem !important;
   margin-bottom: .25rem !important;
 }
 
 .apoie-chave {
   display: block;
-  font-size: .72rem;
+  font-size: .8rem;
   color: $body-color;
-  background: $body-bg;
+  background: #fff;
   border-radius: .35rem;
-  padding: .35rem .5rem;
-  margin-bottom: .5rem;
+  padding: .4rem .6rem;
+  margin-bottom: .6rem;
   word-break: break-all;
 }
 
-.apoie-copiar {
+.apoie-copiar, .tg-botao {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
   border: 0;
   border-radius: 999px;
   background: $primary;
-  color: #fff;
-  font-size: .85rem;
+  color: #fff !important;
+  font-size: .9rem;
   font-weight: 600;
-  padding: .4rem .9rem;
+  padding: .5rem 1.1rem;
   cursor: pointer;
+  text-decoration: none;
   &:hover { background: darken($primary, 6%); }
 }
 
-@media (max-width: 991.98px) {
-  .apoie-grade { grid-template-columns: 1fr; gap: 1.25rem; }
+/* ---------- Telegram ---------- */
+.tg-intro {
+  padding: .25rem .5rem;
+  p { font-size: 1.02rem; line-height: 1.55; }
+  h4 { font-family: $font-display; font-size: 1.15rem; font-weight: 600; margin: 1.4rem 0 .7rem; }
+}
+
+.tg-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 .5rem;
+  li { display: flex; gap: .75rem; margin-bottom: .8rem; line-height: 1.5; }
+  .bi { color: $primary; font-size: 1.25rem; flex: none; margin-top: .05rem; }
+}
+
+.tg-passos {
+  padding-left: 1.3rem;
+  li { margin-bottom: .55rem; line-height: 1.5; }
+}
+
+.tg-nota {
+  font-size: .92rem !important;
+  color: $gray-muted;
+  background: $body-bg;
+  border-radius: .5rem;
+  padding: .7rem .9rem;
+  margin-top: 1rem;
+  .bi { color: $tom-bom; margin-right: .3rem; }
+}
+
+.tg-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  height: 100%;
+  text-align: center;
+
+  img { width: min(300px, 80%); height: auto; }
+  p { color: $gray-muted; font-size: .9rem; margin: 0; }
+  .tg-botao { font-size: 1rem; padding: .6rem 1.4rem; }
+}
+
+@media (max-width: 767.98px) {
+  .apoie-pix { flex-direction: column; text-align: center; }
+}
+
+// o dashboard torna os blocos "fill" (flex em coluna); aqui o pix fica em linha
+.apoie-pix.html-fill-container { flex-direction: row; }
+@media (max-width: 767.98px) { .apoie-pix.html-fill-container { flex-direction: column; } }
+
+// blocos "fill" não devem esticar na altura
+.apoie-bloco > .apoie-texto, .apoie-bloco > .apoie-pix { flex: 0 0 auto !important; }
+.apoie-pix .html-fill-container { justify-content: center; }
+.apoie-copiar { align-self: flex-start; }
+.apoie-qrcode { width: 190px; height: 190px; }
+@media (max-width: 767.98px) {
+  .apoie-bloco, .autor-bloco, .tg-intro { padding: .25rem 0; }
+  .apoie-pix { padding: 1rem; }
 }

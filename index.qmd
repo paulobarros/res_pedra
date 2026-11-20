@@ -616,9 +616,52 @@ if (!tem_m1) {
 <i class="bi bi-info-circle"></i> **Módulo experimental.** As previsões de chuva vêm de modelos meteorológicos globais (via Open-Meteo, CC-BY 4.0) e a chuva observada do MERGE/CPTEC. Os valores são médias sobre toda a bacia de ~40 mil km² a montante da barragem; a chuva em pontos isolados pode ser bem maior. Este painel é informativo e não substitui os comunicados da AXIA Nordeste nem da Defesa Civil.
 :::
 
-# Sobre
+# Telegram
 
-## Row {height="58%"}
+## Row
+
+### Column {width="58%"}
+
+```{r}
+#| title: "Receba os avisos no Telegram"
+#| expandable: false
+
+htmltools::HTML(r"---(<div class="tg-intro">
+  <p>O canal <strong>Monitora Pedra</strong> envia, de graça, as informações do reservatório direto no seu celular:</p>
+  <ul class="tg-lista">
+    <li><i class="bi bi-sunrise"></i><span><strong>Boletim diário às 7h</strong> — volume, cota, entrada e saída de água, saldo e previsão de chuva e de afluência para os próximos dias.</span></li>
+    <li><i class="bi bi-megaphone"></i><span><strong>Comunicados oficiais da AXIA</strong> — sempre que sai uma nova programação de vazões da Pedra, ela é repassada no canal com a tabela de descargas.</span></li>
+    <li><i class="bi bi-exclamation-triangle"></i><span><strong>Alertas</strong> — quando a afluência entra em uma janela de aumento (alta, muito alta ou extrema).</span></li>
+  </ul>
+
+  <h4>Como entrar no canal</h4>
+  <ol class="tg-passos">
+    <li><strong>Instale o Telegram</strong> no celular (Play Store ou App Store) ou use no computador em <a href="https://web.telegram.org" target="_blank">web.telegram.org</a>.</li>
+    <li><strong>Abra o canal</strong> tocando no botão ao lado, ou aponte a câmera do celular para o QR Code. Você também pode buscar por <code>@monitorapedra</code> no Telegram.</li>
+    <li>Toque em <strong>Entrar</strong> (ou <em>Join</em>).</li>
+    <li>Para não perder os avisos, deixe as <strong>notificações do canal ligadas</strong> (ícone do sino no topo do canal).</li>
+  </ol>
+
+  <p class="tg-nota"><i class="bi bi-shield-check"></i> No canal só a equipe do projeto publica. Seu número de telefone não fica visível para os outros inscritos, e você pode sair quando quiser.</p>
+</div>)---")
+```
+
+### Column {width="42%"}
+
+```{r}
+#| title: "Entre no canal"
+#| expandable: false
+
+htmltools::HTML(r"---(<div class="tg-qr">
+  <img src="images/telegram_qrcode.png" alt="QR Code do canal Monitora Pedra no Telegram">
+  <a class="tg-botao" href="https://t.me/monitorapedra" target="_blank"><i class="bi bi-telegram"></i> Abrir o canal no Telegram</a>
+  <p>t.me/monitorapedra</p>
+</div>)---")
+```
+
+# Fontes
+
+## Row
 
 ### Column {width="34%"}
 
@@ -666,24 +709,37 @@ if (!tem_m1) {
 
 :::
 
-## Row {height="42%"}
+# Apoie o projeto
 
-::: {.card .apoie title="Desenvolvido por · Apoie o projeto"}
+## Row
 
-```{=html}
-<div class="apoie-grade">
-  <div class="apoie-autor">
-    <img src="images/apoie_paulo.jpg" class="apoie-foto" alt="Foto de Paulo Barros">
-    <div>
-      <h3>Paulo Barros</h3>
-      <p>Biólogo e mestre em Genética pela UESB, com pós-graduação em Data Science pela Uniamérica.</p>
-      <p><a href="https://instagram.com/pbarros.dados" target="_blank"><i class="bi bi-instagram"></i> <strong>@pbarros.dados</strong></a>
-      · <a href="https://www.datajequie.com.br" target="_blank"><strong>dataJequié</strong></a></p>
-    </div>
-  </div>
+### Column {width="38%"}
+
+```{r}
+#| title: "Desenvolvido por"
+#| expandable: false
+
+htmltools::HTML(r"---(<div class="autor-bloco">
+  <img src="images/apoie_paulo.jpg" class="apoie-foto" alt="Foto de Paulo Barros">
+  <h3>Paulo Barros</h3>
+  <p>Biólogo e mestre em Genética pela UESB, com pós-graduação em Data Science pela Uniamérica.</p>
+  <p class="autor-links">
+    <a href="https://instagram.com/pbarros.dados" target="_blank"><i class="bi bi-instagram"></i> @pbarros.dados</a>
+    <a href="https://www.datajequie.com.br" target="_blank"><i class="bi bi-globe2"></i> dataJequié</a>
+  </p>
+</div>)---")
+```
+
+### Column {width="62%"}
+
+```{r}
+#| title: "Apoie o projeto"
+#| expandable: false
+
+htmltools::HTML(r"---(<div class="apoie-bloco">
   <div class="apoie-texto">
-    <p>Este painel é <strong>independente, gratuito e feito com dados públicos</strong>. Ele nasceu depois da cheia de 2022, para que qualquer pessoa em Jequié acompanhe o reservatório e receba os avisos no Telegram.</p>
-    <p>Manter tudo no ar custa tempo e dinheiro: coleta automática a cada hora, previsões e horas de trabalho para conferir e explicar os dados. <strong>Qualquer valor ajuda</strong> a manter o projeto sem anúncios e a fazê-lo crescer.</p>
+    <p>Este painel é <strong>independente, gratuito e feito com dados públicos</strong>. Ele nasceu depois da cheia de 2022, para que qualquer pessoa em Jequié possa acompanhar o reservatório e receber avisos em tempo real no Telegram.</p>
+    <p>Por trás da plataforma, existe uma rotina contínua de coleta automática a cada hora, modelos de previsão e horas de dedicação para conferir e traduzir esses dados. Se este serviço é útil para você, <strong>sua contribuição ajuda a manter o projeto no ar, sem anúncios e em constante evolução</strong>.</p>
   </div>
   <div class="apoie-pix">
     <img src="images/pix_qrcode.jpg" class="apoie-qrcode" alt="QR code do Pix para apoiar o projeto">
@@ -694,7 +750,5 @@ if (!tem_m1) {
       <button type="button" class="apoie-copiar" onclick="navigator.clipboard.writeText('8908ca84-84c4-40bf-afec-c046806908f8').then(()=>{this.textContent='Chave copiada ✓';setTimeout(()=>this.textContent='Copiar chave Pix',2500)})"><i class="bi bi-clipboard"></i> Copiar chave Pix</button>
     </div>
   </div>
-</div>
+</div>)---")
 ```
-
-:::
