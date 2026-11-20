@@ -42,6 +42,7 @@ jobs:
             any::zoo
             any::xml2
             any::terra
+            any::ranger
             any::here
             any::tidyr
             any::lubridate
@@ -56,6 +57,12 @@ jobs:
         continue-on-error: true
         timeout-minutes: 10
         run: Rscript coleta_bacia.R
+
+      # Previsão de afluência (fase 2): refeita quando há previsão de chuva nova
+      - name: Previsão de afluência
+        continue-on-error: true
+        timeout-minutes: 10
+        run: Rscript previsao_afluencia.R
 
       # Cartas circulares novas da AXIA sobre a Pedra -> canal do Telegram
       - name: Comunicados da AXIA

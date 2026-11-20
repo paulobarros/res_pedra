@@ -1,5 +1,6 @@
 # Fase 2 · Avaliação do modelo de afluência (teste retrospectivo).
 #
+# Alvo híbrido (ver R/modelo_afluencia.R).
 # Treino: até 30/06/2021. Teste: 01/07/2021 em diante — inclui as cheias de
 # dez/2022 e mar/2026. A chuva "futura" no teste é a chuva observada, então o
 # resultado é o MELHOR CASO (previsão de chuva perfeita).
@@ -15,26 +16,8 @@ suppressPackageStartupMessages({
 source("R/modelo_afluencia.R")
 dir.create("fase2/resultados", showWarnings = FALSE)
 
-chuva <- bind_rows(
-  read.csv("data/historico/chuva_bacia_merge_historico.csv"),
-  read.csv("data/chuva_bacia_merge.csv")
-) |> mutate(data = as.Date(data)) |> distinct(data, .keep_all = TRUE)
+pb <- carregar_base_modelo()$pb
 
-afl <- bind_rows(
-  read.csv("data/historico/afluencia_pedra_reconstruida.csv") |>
-    transmute(data = as.Date(data), afl = afluencia_rec, fonte = "balanço SAR+Jequié"),
-  read.csv("data/pedra_dados.csv") |>
-    transmute(data = as.Date(data), afl = afluencia, fonte = "CHESF")
-) |>
-  filter(!is.na(afl)) |>
-  mutate(afl = pmax(afl, 0)) |>
-  arrange(data, fonte) |>
-  distinct(data, .keep_all = TRUE)       # prioriza o balanço; CHESF completa
-
-montante <- read.csv("data/historico/vazoes_diarias_ana.csv", colClasses = c(codigo = "character")) |>
-  filter(codigo == "52405000") |> transmute(data = as.Date(data), vazao)
-
-pb <- preditores_base(montar_base(chuva, afl, montante))
 CORTE <- as.Date("2021-06-30")
 
 t0 <- Sys.time()

@@ -86,6 +86,9 @@ etapa("Previsão de chuva (Open-Meteo ensemble)", {
     acum   <- resumo_previsao_acumulada(ens, hoje) |> mutate(emitido_em = emitido, .before = 1)
     write.csv(diaria, ARQ_PREV_DIARIA, row.names = FALSE)
     write.csv(acum, ARQ_PREV_ACUM, row.names = FALSE)
+    # chuva diária por cenário: entrada do modelo de afluência (previsao_afluencia.R)
+    write.csv(ens |> mutate(emitido_em = emitido, chuva = round(chuva, 2)),
+              "data/previsao_chuva_membros.csv", row.names = FALSE)
 
     # histórico de previsões (para medir acerto e corrigir viés na fase 2)
     write.table(diaria, ARQ_PREV_HIST, sep = ",", row.names = FALSE,
